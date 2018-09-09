@@ -1,0 +1,1 @@
+set BOOST_DIR="E:\develop\boost\boost_1_64_0"
