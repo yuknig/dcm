@@ -476,9 +476,9 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
 
         if (VRType::SQ == tag_desc->m_vr)
         {
-            Sequence sequence(tag_desc->m_tag);
-            if (ParseSequence(group.m_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence, a_groupQueue))
-                group.m_dest_group->m_sequences.emplace(std::move(sequence));
+            std::vector<GroupPtr> sequence_groups;
+            if (ParseSequence(group.m_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_groups, a_groupQueue))
+                group.m_dest_group->addSequence(tag_desc->m_tag, sequence_groups);
             else
             {
                 assert(false);
@@ -502,11 +502,13 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
     return true;
 }
 
-bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, Sequence& a_sequence, std::deque<ParseGroupDesc>& a_items)
+bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items)
 {
     assert(a_stream);
 
     auto tag_offset = a_begin_offset;
+
+    std::vector<GroupPtr> groups;
 
     while (tag_offset < a_end_offset)
     {
@@ -531,11 +533,13 @@ bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a
                                              /*maxTax=*/0xffffffff,
                                              a_config,
                                              item.get() } );
-        a_sequence.emplace_back(std::move(item));
+        groups.emplace_back(item);
 
         tag_offset += tag_desc->m_fullLength;
     }
     assert(tag_offset == a_end_offset);
+
+    a_groups.swap(groups);
     return true;
 }
 

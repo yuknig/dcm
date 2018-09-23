@@ -353,6 +353,13 @@ public:
         }
     }
 
+    void addSequence(const Tag a_tag, std::vector<std::shared_ptr<Group>> a_groups)
+    {
+        bool sorted = m_valuesSorted[ValueBit::Sequence];
+        m_sequences.emplace(sorted, a_tag, std::move(a_groups));
+        m_valuesSorted[ValueBit::Sequence] = sorted;
+    }
+
     /*template <typename T>
     void addTag(const Tag& a_tag, const VRType a_vr, const std::vector<T>& a_value)
     {
@@ -413,7 +420,7 @@ public://types
     typedef SortedList_Tag_ValuePtr<MultiValue>          MultiValues;
     typedef SortedList_Tag_Value<StringValue, false>     StringValues;
     typedef SortedList_Tag_Value<ShortStringValue, true> ShortStringValues; // TODO: place before ordinary string
-    typedef SortedList_Tag_Value<Sequence, false>        SequenceValues;
+    typedef SortedList_Tag_ValuePtr<Sequence>            SequenceValues;
 
     enum ValueBit
     {
@@ -438,23 +445,19 @@ public://data
 
 typedef std::shared_ptr<Group> GroupPtr;
 
-class Sequence: public std::vector<std::shared_ptr<Group>>
+class Sequence: public Tag_ValuePtr<std::vector<std::shared_ptr<Group>>>
 {
 public://types
     typedef Group Item;
+    typedef std::shared_ptr<Item> ItemPtr;
 
 public://functions
-    Sequence(const Tag& a_tag)
-        : m_tag(a_tag)
+    Sequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
+        : Base(a_tag, VRType::SQ, std::move(a_items))
     {}
 
-    Tag tag() const
-    {
-        return m_tag;
-    }
-
-private://data
-    Tag      m_tag;
+private://types
+    typedef Tag_ValuePtr<std::vector<std::shared_ptr<Group>>> Base;
 };
 
 }//namespace dcm

@@ -78,7 +78,7 @@ protected://functions
     static bool Parse(StreamRead& a_stream, GroupPtr& a_root);
     static std::optional<size_t> ParseHeader(StreamRead& a_stream);
     static bool ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue);
-    static bool ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, Sequence& a_sequence, std::deque<ParseGroupDesc>& a_items);
+    static bool ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items);
 
     static std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile);
     static std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile);
