@@ -352,36 +352,33 @@ GetValueResult SingleValue::get(std::basic_string<T>& a_result) const
 
 template <typename T, bool Realloc>
 template <typename... ArgsT>
-void SortedList_Tag_Base<T, Realloc>::emplace(ArgsT&&... a_args)
+void SortedList_Tag_Base<T, Realloc>::emplace(bool& a_is_sorted, ArgsT&&... a_args)
 {
-    m_list.emplace_back(std::forward<ArgsT>(a_args)...); //TODO: forward&&?
-    checkAreTagsSorted();
+    m_list.emplace_back(std::forward<ArgsT>(a_args)...);
+    a_is_sorted = areLastTagsSorted();
 }
 
 template <typename T, bool Realloc>
 void SortedList_Tag_Base<T, Realloc>::sort()
 {
-    if (m_isSorted)
-        return;
-
     std::sort(m_list.begin(), m_list.end(), [](const T& a_lhs, const T& a_rhs) {
         return (a_lhs.tag() < a_rhs.tag());
     });
-    m_isSorted = true;
 }
 
 template <typename T, bool Realloc>
-void SortedList_Tag_Base<T, Realloc>::checkAreTagsSorted()
+bool SortedList_Tag_Base<T, Realloc>::areLastTagsSorted() const
 {
     const size_t size = m_list.size();
-    m_isSorted = (1u < size ? (m_list[size - 2].tag() < m_list[size - 1].tag()) : true);
+    const bool result = (1u < size ? (m_list[size - 2].tag() < m_list[size - 1].tag()) : true);
+    return result;
 }
 
 template <typename T, bool Realloc>
-bool SortedList_Tag_Base<T, Realloc>::hasTag(const Tag a_tag) const
+bool SortedList_Tag_Base<T, Realloc>::hasTag(const Tag a_tag, bool a_is_sorted) const
 {
     const T* valuePtr = nullptr;
-    if (m_isSorted)
+    if (a_is_sorted)
         valuePtr = details::findTagBinSearch<T>(m_list, a_tag);
     else
         valuePtr = details::findTagLinearSearch<T>(m_list, a_tag);
@@ -390,33 +387,15 @@ bool SortedList_Tag_Base<T, Realloc>::hasTag(const Tag a_tag) const
 }
 
 template <typename T, bool Realloc>
-bool SortedList_Tag_Base<T, Realloc>::hasTag(const Tag a_tag)
-{
-    if (!m_isSorted)
-        sort();
-
-    const T* valuePtr = details::findTagBinSearch<T>(m_list, a_tag);
-    return (nullptr != valuePtr);
-}
-
-template <typename T, bool Realloc>
-const T* SortedList_Tag_Base<T, Realloc>::getTagPtr(const Tag a_tag) const
+const T* SortedList_Tag_Base<T, Realloc>::getTagPtr(const Tag a_tag, bool a_is_sorted) const
 {
     const T* result = nullptr;
-    if (m_isSorted)
+    if (a_isSorted)
         result = details::findTagBinSearch<T>(m_list, a_tag);
     else
         result = details::findTagLinearSearch<T>(m_list, a_tag);
 
     return result;
-}
-
-template <typename T, bool Realloc>
-const T* SortedList_Tag_Base<T, Realloc>::getTagPtr(const Tag a_tag)
-{
-    if (!m_isSorted)
-        sort();
-    return details::findTagBinSearch<T>(m_list, a_tag);
 }
 
 ////////////////////////////////////////
@@ -425,19 +404,9 @@ const T* SortedList_Tag_Base<T, Realloc>::getTagPtr(const Tag a_tag)
 
 template <typename T, bool Realloc>
 template <typename V>
-GetValueResult SortedList_Tag_Value<T, Realloc>::get(const Tag a_tag, V& a_result) const
+GetValueResult SortedList_Tag_Value<T, Realloc>::get(const Tag a_tag, V& a_result, bool a_is_sorted) const
 {
-    const T* valuePtr = Base::getTagPtr(a_tag);
-    if (!valuePtr)
-        return GetValueResult::DoesNotExists;
-    return valuePtr->get(a_result);
-}
-
-template <typename T, bool Realloc>
-template <typename V>
-GetValueResult SortedList_Tag_Value<T, Realloc>::get(const Tag a_tag, V& a_result)
-{
-    const T* valuePtr = Base::getTagPtr(a_tag);
+    const T* valuePtr = Base::getTagPtr(a_tag, a_is_sorted);
     if (!valuePtr)
         return GetValueResult::DoesNotExists;
     return valuePtr->get(a_result);
@@ -449,39 +418,29 @@ GetValueResult SortedList_Tag_Value<T, Realloc>::get(const Tag a_tag, V& a_resul
 
 template <typename T>
 template <typename V>
-GetValueResult SortedList_Tag_ValuePtr<T>::get(const Tag a_tag, V& a_result) const
+GetValueResult SortedList_Tag_ValuePtr<T>::get(const Tag a_tag, V& a_result, bool a_is_sorted) const
 {
-    const T* valuePtr = Base::getTagPtr(a_tag);
+    const T* valuePtr = Base::getTagPtr(a_tag, a_is_sorted);
     if (!valuePtr)
         return GetValueResult::DoesNotExists;
     return (*valuePtr)->get(a_result);
 }
 
-template <typename T>
-template <typename V>
-GetValueResult SortedList_Tag_ValuePtr<T>::get(const Tag a_tag, V& a_result)
-{
-    const T* valuePtr = Base::getTagPtr(a_tag);
-    if (!valuePtr)
-        return GetValueResult::DoesNotExists;
-    return (*valuePtr)->get(a_result);
-}
 
 ////////////////////////////////////////
 //SingleValues
 ////////////////////////////////////////
 
 template <>
-inline void SingleValues::add(const Tag a_tag, const VRType a_vr, const double& a_value)
+inline void SingleValues::add(bool& a_is_sorted, const Tag a_tag, const VRType a_vr, const double& a_value)
 {
     assert((VRType::FD == a_vr) || (VRType::OD == a_vr));
 
     SingleValue value(a_tag, a_vr, static_cast<uint32_t>(m_doubles.size()));
     m_list.emplace_back(std::move(value));
     m_doubles.emplace_back(a_value);
-    checkAreTagsSorted();
+    a_is_sorted = areLastTagsSorted();
 }
-
 
 //TODO: getVector()
 

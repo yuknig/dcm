@@ -155,22 +155,19 @@ class SortedList_Tag_Base
 {
 public://functions
     SortedList_Tag_Base()
-        : m_isSorted(true)
     {}
 
     template <typename... ArgsT>
-    void emplace(ArgsT&&... a_args);
+    void emplace(bool& a_is_sorted, ArgsT&&... a_args);
 
-    bool hasTag(const Tag a_tag) const;
-    bool hasTag(const Tag a_tag);
+    bool hasTag(const Tag a_tag, bool a_is_sorted) const;
 
     void sort();
 
 protected://functions
-    const T* getTagPtr(const Tag a_tag) const;
-    const T* getTagPtr(const Tag a_tag);
+    const T* getTagPtr(const Tag a_tag, bool a_is_sorted) const;
 
-    void checkAreTagsSorted();
+    bool areLastTagsSorted() const;
 
 protected://types
 #if INTPTR_MAX == INT32_MAX
@@ -182,7 +179,6 @@ protected://types
 protected://data
     //std::vector<T> m_list;
     MVector<T, SizeType, Realloc> m_list;
-    bool m_isSorted;
 };
 
 template <typename T, bool Realloc>
@@ -190,10 +186,7 @@ class SortedList_Tag_Value: public SortedList_Tag_Base<T, Realloc>
 {
 public://functions
     template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result) const;
-
-    template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result);
+    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
 
 private://types
     typedef SortedList_Tag_Base<T, Realloc> Base;
@@ -204,10 +197,7 @@ class SortedList_Tag_ValuePtr: public SortedList_Tag_Base<T, false>
 {
 public://functions
     template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result) const;
-
-    template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result);
+    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
 
 private://types
     typedef SortedList_Tag_Base<T, false> Base;
@@ -221,10 +211,10 @@ public://functions
     {}
 
     template <typename T>
-    void add(const Tag a_tag, const VRType a_vr, const T& a_value)
+    void add(bool& a_is_sorted, const Tag a_tag, const VRType a_vr, const T& a_value)
     {
         static_assert(!std::is_same<T, double>::value, "Specialization for double should be used");
-        Base::emplace(a_tag, a_vr, a_value);
+        Base::emplace(a_is_sorted, a_tag, a_vr, a_value);
     }
 
 private://data
@@ -332,17 +322,35 @@ public:
             if (isStringVr(a_vr))
             {
                 if (ShortStringValue::getLengthMax() >= a_valueElements)
-                    m_shortStringValues.emplace(a_tag, a_vr, a_valueElements, a_stream);
+                {
+                    bool sorted = m_valuesSorted[ValueBit::ShortString];
+                    m_shortStringValues.emplace(sorted, a_tag, a_vr, a_valueElements, a_stream);
+                    m_valuesSorted[ValueBit::ShortString] = sorted;
+                }
                 else
-                    m_stringValues.emplace(a_tag, a_vr, a_valueElements, a_stream);
+                {
+                    bool sorted = m_valuesSorted[ValueBit::String];
+                    m_stringValues.emplace(sorted, a_tag, a_vr, a_valueElements, a_stream);
+                    m_valuesSorted[ValueBit::String] = sorted;
+                }
             }
             else
-                m_multiValues.emplace(a_tag, a_vr, a_valueElements, a_stream);
+            {
+                bool sorted = m_valuesSorted[ValueBit::Multi];
+                m_multiValues.emplace(sorted, a_tag, a_vr, a_valueElements, a_stream);
+                m_valuesSorted[ValueBit::Multi] = sorted;
+            }
         }
         else if (1 == a_valueElements)
+        {
             addTag(a_tag, a_vr, a_stream.read<T>());
+        }
         else
-            m_noValues.emplace(a_tag, a_vr); //for has_tag() only
+        {
+            bool sorted = m_valuesSorted[ValueBit::No];
+            m_noValues.emplace(sorted, a_tag, a_vr); //for has_tag() only
+            m_valuesSorted[ValueBit::No] = sorted;
+        }
     }
 
     /*template <typename T>
@@ -353,34 +361,17 @@ public:
 
     bool hasTag(const Tag a_tag) const
     {
-        if (m_noValues.hasTag(a_tag))
+        if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
             return true;
-        if (m_singleValues.hasTag(a_tag))
+        if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
             return true;
-        if (m_stringValues.hasTag(a_tag))
+        if (m_stringValues.hasTag(a_tag, m_valuesSorted[ValueBit::String]))
             return true;
-        if (m_shortStringValues.hasTag(a_tag))
+        if (m_shortStringValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortString]))
             return true;
-        if (m_multiValues.hasTag(a_tag))
+        if (m_multiValues.hasTag(a_tag, m_valuesSorted[ValueBit::Multi]))
             return true;
-        if (m_sequences.hasTag(a_tag))
-            return true;
-        return false;
-    }
-
-    bool hasTag(const Tag a_tag)
-    {
-        if (m_noValues.hasTag(a_tag))
-            return true;
-        if (m_singleValues.hasTag(a_tag))
-            return true;
-        if (m_stringValues.hasTag(a_tag))
-            return true;
-        if (m_shortStringValues.hasTag(a_tag))
-            return true;
-        if (m_multiValues.hasTag(a_tag))
-            return true;
-        if (m_sequences.hasTag(a_tag))
+        if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
             return true;
         return false;
     }
@@ -390,15 +381,15 @@ public:
     {
         GetValueResult res = DoesNotExists;
 
-        if (m_noValues.hasTag(a_tag))
+        if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
             return GetValueResult::FailedCast;
 
-        if (GetValueSucceeded(m_singleValues.get(a_tag, a_value)))
+        if (GetValueSucceeded(m_singleValues.get(a_tag, a_value, m_valuesSorted[ValueBit::No])))
             return true;
         else if (GetValueResult::DoesNotExists != res)
             return false;
 
-        if (GetValueSucceeded(m_multiValues.get(a_tag, a_value)))
+        if (GetValueSucceeded(m_multiValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Multi])))
             return true;
         else if (GetValueResult::DoesNotExists != res)
             return false;
@@ -406,21 +397,22 @@ public:
         return false;
     }
 
-
-
 protected://functions
     template <typename T>
     void addTag(const Tag a_tag, const VRType a_vr, const T a_value)/// Add SingleValue
     {
         static_assert(std::is_arithmetic<T>::value, "T should be arithmetic");
-        m_singleValues.add(a_tag, a_vr, a_value);
+
+        bool sorted = m_valuesSorted[ValueBit::Single];
+        m_singleValues.add(sorted, a_tag, a_vr, a_value);
+        m_valuesSorted[ValueBit::Single] = sorted;
     }
 
 public://types
     typedef SortedList_Tag_Value<Tag_NoValue, true>      NoValues;
     typedef SortedList_Tag_ValuePtr<MultiValue>          MultiValues;
     typedef SortedList_Tag_Value<StringValue, false>     StringValues;
-    typedef SortedList_Tag_Value<ShortStringValue, true> ShortStringValues;
+    typedef SortedList_Tag_Value<ShortStringValue, true> ShortStringValues; // TODO: place before ordinary string
     typedef SortedList_Tag_Value<Sequence, false>        SequenceValues;
 
     enum ValueBit
