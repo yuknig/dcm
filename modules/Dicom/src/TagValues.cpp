@@ -28,4 +28,31 @@ bool Tag_NoValue::operator<(const Tag_NoValue& a_rhs) const
 
 }
 
+////////////////////////////////////////
+//Group
+////////////////////////////////////////
+
+void Group::sort(bool a_recursive)
+{
+    m_noValues.sort();
+    m_singleValues.sort();
+    m_stringValues.sort();
+    m_shortStringValues.sort();
+    m_multiValues.sort();
+    m_sequences.sort();
+    m_valuesSorted.set();
+
+    if (a_recursive)
+    {
+        for (const auto& sequence : m_sequences)
+        {
+            const auto& groups = sequence.value();
+            for (const auto& groupPtr : groups)
+            {
+                groupPtr->sort(true);
+            }
+        }
+    }
+}
+
 }//namespace dcm

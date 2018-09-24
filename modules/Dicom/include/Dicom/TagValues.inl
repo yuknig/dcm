@@ -375,6 +375,18 @@ bool SortedList_Tag_Base<T, Realloc>::areLastTagsSorted() const
 }
 
 template <typename T, bool Realloc>
+T* SortedList_Tag_Base<T, Realloc>::begin()
+{
+    return m_list.begin();
+}
+
+template <typename T, bool Realloc>
+T* SortedList_Tag_Base<T, Realloc>::end()
+{
+    return m_list.end();
+}
+
+template <typename T, bool Realloc>
 bool SortedList_Tag_Base<T, Realloc>::hasTag(const Tag a_tag, bool a_is_sorted) const
 {
     const T* valuePtr = nullptr;

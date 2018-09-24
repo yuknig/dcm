@@ -160,6 +160,9 @@ public://functions
     template <typename... ArgsT>
     void emplace(bool& a_is_sorted, ArgsT&&... a_args);
 
+    T* begin();
+    T* end();
+
     bool hasTag(const Tag a_tag, bool a_is_sorted) const;
 
     void sort();
@@ -314,6 +317,11 @@ class Sequence;
 class Group
 {
 public:
+    Group()
+    {
+        m_valuesSorted.set();
+    }
+
     template <typename T>
     void addTag(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream)///add MultiValue, SingleValue or NoValue
     {
@@ -403,6 +411,8 @@ public:
 
         return false;
     }
+
+    void sort(bool a_recursive);
 
 protected://functions
     template <typename T>

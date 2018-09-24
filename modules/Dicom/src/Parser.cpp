@@ -430,6 +430,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root)
     {
         ParseGroup(groupsToParse);
     }
+    root->sort(true);
     a_root.swap(root);
     return true;
 }
