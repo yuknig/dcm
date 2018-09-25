@@ -32,6 +32,30 @@ bool Tag_NoValue::operator<(const Tag_NoValue& a_rhs) const
 //Group
 ////////////////////////////////////////
 
+void Group::addSequence(const Tag a_tag, std::vector<std::shared_ptr<Group>> a_groups)
+{
+    bool sorted = m_valuesSorted[ValueBit::Sequence];
+    m_sequences.emplace(sorted, a_tag, std::move(a_groups));
+    m_valuesSorted[ValueBit::Sequence] = sorted;
+}
+
+bool Group::hasTag(const Tag a_tag) const
+{
+    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
+        return true;
+    if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
+        return true;
+    if (m_stringValues.hasTag(a_tag, m_valuesSorted[ValueBit::String]))
+        return true;
+    if (m_shortStringValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortString]))
+        return true;
+    if (m_multiValues.hasTag(a_tag, m_valuesSorted[ValueBit::Multi]))
+        return true;
+    if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
+        return true;
+    return false;
+}
+
 void Group::sort(bool a_recursive)
 {
     m_noValues.sort();
