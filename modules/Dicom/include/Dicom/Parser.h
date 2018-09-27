@@ -69,13 +69,13 @@ struct ParseGroupDesc
 class Parser
 {
 public://functions
-    Parser(StreamRead& a_stream);
+    Parser(StreamRead& a_stream, const Tag& a_max_tag = 0xffffffff);
 
     GroupPtr root() const;
 
 protected://functions
     // move to testable ParserHelper
-    static bool Parse(StreamRead& a_stream, GroupPtr& a_root);
+    static bool Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag);
     static std::optional<size_t> ParseHeader(StreamRead& a_stream);
     static bool ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue);
     static bool ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items);

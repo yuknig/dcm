@@ -400,9 +400,9 @@ public://data
     //ParserConfig m_config;
 };
 
-Parser::Parser(StreamRead& a_stream)
+Parser::Parser(StreamRead& a_stream, const Tag& a_max_tag)
 {
-    bool result = Parse(a_stream, m_root);
+    bool result = Parse(a_stream, m_root, a_max_tag);
     if (!result)
     {
         assert(false);
@@ -410,7 +410,7 @@ Parser::Parser(StreamRead& a_stream)
     }
 }
 
-bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root)
+bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
 {
     if (a_stream.isEnd())
         return false;
@@ -423,14 +423,19 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root)
         if (!data_offset)
             return false;
 
-        groupsToParse.emplace_back(ParseGroupDesc{ &a_stream, *data_offset, a_stream.size(), Tag(0xffff, 0xffff), config, root.get() });
+        groupsToParse.emplace_back(ParseGroupDesc{ &a_stream, *data_offset, a_stream.size(), a_max_tag, config, root.get() });
     }
 
     while (!groupsToParse.empty())
     {
-        ParseGroup(groupsToParse);
+        bool groupParsed = ParseGroup(groupsToParse);
+        if (!groupParsed)
+        {
+            assert(false);
+        }
     }
     root->sort(true);
+
     a_root.swap(root);
     return true;
 }
@@ -461,8 +466,9 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
 
     auto tag_offset = group.m_stream_begin;
 
+    Tag tagNum(0);
     size_t tagCount = 0;
-    while (tag_offset < group.m_stream_end)
+    while (tag_offset < group.m_stream_end && tagNum < group.m_max_tag)
     {
         //std::cout << tag_offset << " " << tagCount << std::endl;
         group.m_stream->seek(tag_offset);
@@ -473,13 +479,14 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
             return false;
         }
 
+        tagNum = tag_desc->m_tag;
         const auto value_offset = tag_offset + tag_desc->m_valueOffset;
 
         if (VRType::SQ == tag_desc->m_vr)
         {
             std::vector<GroupPtr> sequence_groups;
             if (ParseSequence(group.m_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_groups, a_groupQueue))
-                group.m_dest_group->addSequence(tag_desc->m_tag, sequence_groups);
+                group.m_dest_group->addSequence(tagNum, sequence_groups);
             else
             {
                 assert(false);
