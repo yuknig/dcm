@@ -80,14 +80,19 @@ protected://functions
     static bool ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue);
     static bool ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items);
 
-    static std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile);
-    static std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile);
-    static std::optional<Tag> getTag(const StreamRead& a_stream);
-
 private://data
     GroupPtr     m_root;
     ParserConfig m_config;
 };
+
+namespace ParseHelper
+{
+
+std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile);
+std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile);
+std::optional<Tag> getTag(const StreamRead& a_stream);
+
+} // namespace ParseHelper
 
 }//namespace dcm
 

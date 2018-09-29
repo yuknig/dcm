@@ -472,7 +472,7 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
     {
         //std::cout << tag_offset << " " << tagCount << std::endl;
         group.m_stream->seek(tag_offset);
-        const auto tag_desc = getTagDesc(*group.m_stream, group.m_config.IsExplicit());
+        const auto tag_desc = ParseHelper::getTagDesc(*group.m_stream, group.m_config.IsExplicit());
         if (!tag_desc)
         {
             assert(false);
@@ -521,7 +521,7 @@ bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a
     while (tag_offset < a_end_offset)
     {
         a_stream->seek(tag_offset);
-        const auto tag_desc = getTagDesc(*a_stream, a_config.IsExplicit());
+        const auto tag_desc = ParseHelper::getTagDesc(*a_stream, a_config.IsExplicit());
         if (!tag_desc)
         {
             assert(false);
@@ -551,7 +551,19 @@ bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a
     return true;
 }
 
-std::optional<TagDesc> Parser::getTagDesc(StreamRead& a_stream, const bool a_explicitFile)
+GroupPtr Parser::root() const
+{
+    return m_root;
+}
+
+////////////////////////////////////////
+// ParseHelper
+////////////////////////////////////////
+
+namespace ParseHelper
+{
+
+std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile)
 {
     const auto tag_vr = getTagAndVr(a_stream, a_explicitFile);
     if (!tag_vr)
@@ -624,7 +636,7 @@ std::optional<TagDesc> Parser::getTagDesc(StreamRead& a_stream, const bool a_exp
     return std::nullopt;
 }
 
-std::optional<std::pair<Tag, VRType>> Parser::getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile)
+std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile)
 {
     static const uint32_t ItemTag           = 0xfffee000;
     static const uint32_t ItemDelimiter     = 0xfffee00d;
@@ -655,7 +667,7 @@ std::optional<std::pair<Tag, VRType>> Parser::getTagAndVr(const StreamRead& a_st
     return std::make_pair(*tag, vrType);
 }
 
-std::optional<Tag> Parser::getTag(const StreamRead& a_stream)
+std::optional<Tag> getTag(const StreamRead& a_stream)
 {
     if (sizeof(Tag) > a_stream.sizeToEnd()) // 4 bytes tag
     {
@@ -666,9 +678,6 @@ std::optional<Tag> Parser::getTag(const StreamRead& a_stream)
     return Tag(data & 0xffff, data >> 16);
 }
 
-GroupPtr Parser::root() const
-{
-    return m_root;
-}
+} // namespace ParseHelper
 
 } // namespace dcm
