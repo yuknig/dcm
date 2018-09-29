@@ -42,9 +42,15 @@ public://data
 
 struct ParserConfig
 {
-public:
+public://data
     ParserConfig()
         : m_explicit(true)
+        , m_little_endian(true)
+    {}
+
+    ParserConfig(bool a_explicit, bool a_little_endian)
+        : m_explicit(a_explicit)
+        , m_little_endian(a_little_endian)
     {}
 
     bool IsExplicit() const 
@@ -52,8 +58,9 @@ public:
         return m_explicit;
     }
 
-private://data
+public://data
     bool m_explicit;
+    bool m_little_endian;
 };
 
 struct ParseGroupDesc
