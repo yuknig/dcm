@@ -241,9 +241,15 @@ public://functions
         }
     }
 
-    const std::string& get() const
+    /*const std::string& get() const
     {
         return m_value;
+    }*/
+
+    GetValueResult get(std::string& a_value) const
+    {
+        a_value = m_value;
+        return GetValueResult::Ok_NoCast;
     }
 
 private://data
@@ -264,10 +270,16 @@ public://functions
             m_value[i] = '\0';
     }
 
-    size_t length() const
+    GetValueResult get(std::string& a_value) const
+    {
+        a_value = std::string(m_value.data());
+        return GetValueResult::Ok_NoCast;
+    }
+
+    /*size_t length() const
     {
         return strlen(m_value.data());
-    }
+    }*/
 
     static size_t getLengthMax()
     {
@@ -300,6 +312,18 @@ public://function
         {
             assert(false);
         }
+    }
+    template <typename T>
+    GetValueResult get(T& /*a_value*/) const
+    {
+        return GetValueResult::FailedCast;
+    }
+
+    template <>
+    inline GetValueResult get(std::string& a_value) const
+    {
+        assert(false);
+        return GetValueResult::Ok_WithCast;
     }
 
 private://types
@@ -365,27 +389,34 @@ public:
 
     bool hasTag(const Tag a_tag) const;
 
+    bool hasValue(const Tag a_tag) const;
+
     void sort(bool a_recursive);
 
     template <typename T>
-    bool getTag(const Tag a_tag, T& a_value) const
+    GetValueResult getTag(const Tag a_tag, T& a_value) const
     {
-        GetValueResult res = DoesNotExists;
-
         if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
-            return GetValueResult::FailedCast;
+            return details::GetFromNoValue(a_value);
 
-        if (GetValueSucceeded(m_singleValues.get(a_tag, a_value, m_valuesSorted[ValueBit::No])))
-            return true;
-        else if (GetValueResult::DoesNotExists != res)
-            return false;
+        GetValueResult res;
+        res = m_singleValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Single]);
+        if (res != GetValueResult::DoesNotExists)
+            return res;
 
-        if (GetValueSucceeded(m_multiValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Multi])))
-            return true;
-        else if (GetValueResult::DoesNotExists != res)
-            return false;
+        res = m_shortStringValues.get(a_tag, a_value, m_valuesSorted[ValueBit::ShortString]);
+        if (res != GetValueResult::DoesNotExists)
+            return res;
 
-        return false;
+        res = m_stringValues.get(a_tag, a_value, m_valuesSorted[ValueBit::String]);
+        if (res != GetValueResult::DoesNotExists)
+            return res;
+
+        res = m_multiValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Multi]);
+        if (res != GetValueResult::DoesNotExists)
+            return res;
+
+        return GetValueResult::DoesNotExists;
     }
 
 protected://functions
@@ -420,8 +451,8 @@ public://types
 public://data
     NoValues          m_noValues;
     SingleValues      m_singleValues;
-    StringValues      m_stringValues;
     ShortStringValues m_shortStringValues;
+    StringValues      m_stringValues;
     MultiValues       m_multiValues;
     SequenceValues    m_sequences;
     std::bitset<ValueBit::MaxValue + 1> m_valuesSorted;

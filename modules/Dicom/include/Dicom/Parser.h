@@ -65,10 +65,8 @@ public://data
 
 struct ParseGroupDesc
 {
-    StreamRead*  m_stream;
     size_t       m_stream_begin;
     size_t       m_stream_end;
-    Tag          m_max_tag;
     ParserConfig m_config;
     Group*       m_dest_group;
 };
@@ -84,8 +82,6 @@ protected://functions
     // move to testable ParserHelper
     static bool Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag);
     static std::optional<size_t> ParseHeader(StreamRead& a_stream);
-    static bool ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue);
-    static bool ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items);
 
 private://data
     GroupPtr     m_root;
@@ -95,6 +91,8 @@ private://data
 namespace ParseHelper
 {
 
+std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag);
+bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items);
 std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile);
 std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile);
 std::optional<Tag> getTag(const StreamRead& a_stream);

@@ -244,145 +244,6 @@ bool readDicomParams(Group& a_dest,
     return result;
 }
 
-bool getTag(const char* a_tagPtr, const size_t a_bytesLeft, uint32_t& a_tag)
-{
-    if (sizeof(a_tag) > a_bytesLeft)//4 bytes tag
-        return false;
-
-    const uint16_t groupNum = *ptrCast<uint16_t>(a_tagPtr);
-    const uint16_t elementNum = *ptrCast<uint16_t>(a_tagPtr + 2);
-    a_tag = (groupNum << 16) | elementNum;
-    return true;
-}
-
-bool getTagAndVr(const bool a_explicitFile, const char* a_tagPtr, const size_t a_bytesLeft, uint32_t& a_tag, VRType& a_vr)
-{
-    uint32_t tag = 0;
-    if (!getTag(a_tagPtr, a_bytesLeft, tag))
-        return false;
-
-    const bool isNoVrTag = (ItemTag == tag) || (ItemDelimiter == tag) || (SequenceDelimiter == tag);
-    const bool isExplicitTag = isNoVrTag ? false : a_explicitFile;
-
-    VRType vrType = VRType::Undefined;
-    if (isExplicitTag)
-    {
-        if (6 > a_bytesLeft)
-            return false;
-
-        const uint16_t vr = *ptrCast<uint16_t>(a_tagPtr + 4);
-        const VRCode vrCode = static_cast<VRCode>(vr);
-        vrType = vrCodeToVrType(vrCode);
-        assert(VRType::Undefined != vrType);
-    }
-
-    a_tag = tag;
-    a_vr = vrType;
-    return true;
-}
-
-bool getTagDesc(const bool a_explicitFile,
-                const char* const a_ptr, const size_t a_bytesLeft,
-                TagDesc& a_result)
-{
-    uint32_t tag = 0;
-    VRType vr = VRType::Undefined;
-    if (!getTagAndVr(a_explicitFile, a_ptr, a_bytesLeft, tag, vr))
-        return false;
-
-    uint8_t  valueOffset = 0;
-    uint32_t valueLength = 0;
-    const bool isExplicitVr = (VRType::Undefined != vr);
-    if (isExplicitVr)
-    {
-        if (isSpecialVr(vr))
-        {
-            valueOffset = 12;
-            valueLength = *ptrCast<uint32_t>(a_ptr + 8);
-        }
-        else
-        {
-            valueOffset = 8;
-            valueLength = *ptrCast<uint16_t>(a_ptr + 6);
-        }
-    }
-    else
-    {
-        valueOffset = 8;
-        valueLength = *ptrCast<uint32_t>(a_ptr + 4);
-    }
-
-    const bool isNested = ((VRType::SQ == vr) || (ItemTag == tag));
-
-    if (0xffffffff != valueLength)
-    {
-        a_result = TagDesc(tag, valueOffset + valueLength, valueLength, valueOffset, vr, isNested);
-        return true;
-    }
-
-    const bool isTagSubSequnce = (ItemTag == tag);
-    if ((!isTagSubSequnce) && (isExplicitVr) && (VRType::SQ != vr) && (VRType::OB != vr) && (VRType::OW != vr) && (VRType::UN != vr))
-    {
-        return false;
-    }
-
-    const uint32_t delim = isTagSubSequnce ? ItemDelimiter : SequenceDelimiter;
-    valueLength = 0;
-    TagDesc nestedLayout;//sequence item or subitem
-    uint32_t curItemTag = 0;
-
-    do
-    {
-        const size_t itemOffset = valueOffset + valueLength;
-        if (!getTag(a_ptr + itemOffset, a_bytesLeft - itemOffset, curItemTag))
-        {
-            return false;
-        }
-        if (!getTagDesc(a_explicitFile, a_ptr + itemOffset, a_bytesLeft - itemOffset, nestedLayout))
-        {
-            return false;
-        }
-        valueLength += nestedLayout.m_fullLength;
-    } while (delim != curItemTag);
-
-    assert(nestedLayout.m_fullLength < valueLength);
-
-    a_result = TagDesc(tag,
-                       valueOffset + valueLength,
-                       valueLength - nestedLayout.m_fullLength,//not count last delimiter
-                       valueOffset,
-                       vr,
-                       true);
-    return true;
-}
-
-bool parseDicomHeaderMemory(const char* a_ptr, const size_t a_size, size_t& a_dataStartOffset)
-{
-    const uint32_t magic = 0x4D434944;
-    if ((!a_ptr) || (4 > a_size))
-    {
-        return false;
-    }
-
-    if (magic == *ptrCast<uint32_t>(a_ptr))
-    {
-        a_dataStartOffset = 4;
-        return true;
-    }
-
-    const size_t MetaHeaderLength = 128U;
-    if (MetaHeaderLength + 4 > a_size)
-        return false;
-
-    if (magic == *ptrCast<uint32_t>(a_ptr + MetaHeaderLength))
-    {
-        a_dataStartOffset = MetaHeaderLength + 4;
-        return true;
-    }
-
-    return false;
-}
-
 struct TagMemoryGroup
 {
 public://functions
@@ -416,20 +277,32 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
         return false;
 
     auto root = std::make_shared<Group>();
-    ParserConfig config;
-    std::deque<ParseGroupDesc> groupsToParse;
+    size_t start_offset = 0;
+
     {
         auto data_offset = ParseHeader(a_stream);
         if (!data_offset)
             return false;
 
-        groupsToParse.emplace_back(ParseGroupDesc{ &a_stream, *data_offset, a_stream.size(), a_max_tag, config, root.get() });
+        std::deque<ParseGroupDesc> groups_to_parse;
+        ParserConfig def_config;
+        groups_to_parse.emplace_back(ParseGroupDesc{ *data_offset, a_stream.size(), def_config, root.get() });
+        auto parsed_to = ParseHelper::PickAndParseGroup(a_stream, groups_to_parse, std::min(a_max_tag, Tag(0x3, 0x0))); // parse group 0x0002
+        if (!parsed_to)
+        {
+            return false;
+        }
+        start_offset = *parsed_to;
     }
 
-    while (!groupsToParse.empty())
+    ParserConfig config;
+    std::deque<ParseGroupDesc> groups_to_parse;
+    groups_to_parse.emplace_back(ParseGroupDesc{ start_offset, a_stream.size() - start_offset, config, root.get() });
+
+    while (!groups_to_parse.empty())
     {
-        bool groupParsed = ParseGroup(groupsToParse);
-        if (!groupParsed)
+        auto parsed_to_offset = ParseHelper::PickAndParseGroup(a_stream, groups_to_parse, a_max_tag);
+        if (!parsed_to_offset.has_value())
         {
             assert(false);
         }
@@ -456,23 +329,34 @@ std::optional<size_t> Parser::ParseHeader(StreamRead& a_stream)
     return SignatureOfsset + 4/*sizeof(uint32_t)*/;
 }
 
-bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
+GroupPtr Parser::root() const
+{
+    return m_root;
+}
+
+////////////////////////////////////////
+// ParseHelper
+////////////////////////////////////////
+
+namespace ParseHelper
+{
+
+// parse 1 group from queue
+std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag)
 {
     if (a_groupQueue.empty())
-        return true;
+        return std::nullopt;
 
     auto group = std::move(a_groupQueue.back());
     a_groupQueue.pop_back();
 
     auto tag_offset = group.m_stream_begin;
-
     Tag tagNum(0);
-    size_t tagCount = 0;
-    while (tag_offset < group.m_stream_end && tagNum < group.m_max_tag)
+
+    while (tag_offset < group.m_stream_end && tagNum < a_max_tag)
     {
-        //std::cout << tag_offset << " " << tagCount << std::endl;
-        group.m_stream->seek(tag_offset);
-        const auto tag_desc = ParseHelper::getTagDesc(*group.m_stream, group.m_config.IsExplicit());
+        a_stream.seek(tag_offset);
+        const auto tag_desc = ParseHelper::getTagDesc(a_stream, group.m_config.IsExplicit());
         if (!tag_desc)
         {
             assert(false);
@@ -485,7 +369,7 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
         if (VRType::SQ == tag_desc->m_vr)
         {
             std::vector<GroupPtr> sequence_groups;
-            if (ParseSequence(group.m_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_groups, a_groupQueue))
+            if (ParseSequence(a_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_groups, a_groupQueue))
                 group.m_dest_group->addSequence(tagNum, sequence_groups);
             else
             {
@@ -495,33 +379,30 @@ bool Parser::ParseGroup(std::deque<ParseGroupDesc>& a_groupQueue)
         }
         else
         {
-            group.m_stream->seek(value_offset);
-            if (!readDicomParams(*group.m_dest_group, *group.m_stream, *tag_desc))
+            a_stream.seek(value_offset);
+            if (!readDicomParams(*group.m_dest_group, a_stream, *tag_desc))
             {
                 assert(false);
                 return false;
             }
         }
         tag_offset += tag_desc->m_fullLength;
-        ++tagCount;
     }
 
     assert(tag_offset == group.m_stream_end);
-    return true;
+    return tag_offset;
 }
 
-bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items)
+bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items)
 {
-    assert(a_stream);
-
     auto tag_offset = a_begin_offset;
 
     std::vector<GroupPtr> groups;
 
     while (tag_offset < a_end_offset)
     {
-        a_stream->seek(tag_offset);
-        const auto tag_desc = ParseHelper::getTagDesc(*a_stream, a_config.IsExplicit());
+        a_stream.seek(tag_offset);
+        const auto tag_desc = ParseHelper::getTagDesc(a_stream, a_config.IsExplicit());
         if (!tag_desc)
         {
             assert(false);
@@ -535,12 +416,10 @@ bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a
         const auto value_offset = tag_offset + tag_desc->m_valueOffset;
 
         auto item = std::make_shared<Group>();
-        a_items.emplace_back(ParseGroupDesc{ a_stream,
-                                             value_offset,
+        a_items.emplace_back(ParseGroupDesc{ value_offset,
                                              value_offset + tag_desc->m_valueLength,
-                                             /*maxTax=*/0xffffffff,
                                              a_config,
-                                             item.get() } );
+                                             item.get() });
         groups.emplace_back(item);
 
         tag_offset += tag_desc->m_fullLength;
@@ -550,18 +429,6 @@ bool Parser::ParseSequence(StreamRead* a_stream, size_t a_begin_offset, size_t a
     a_groups.swap(groups);
     return true;
 }
-
-GroupPtr Parser::root() const
-{
-    return m_root;
-}
-
-////////////////////////////////////////
-// ParseHelper
-////////////////////////////////////////
-
-namespace ParseHelper
-{
 
 std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile)
 {

@@ -75,17 +75,19 @@ GetValueResult castDown(To& a_to, const From* a_from)
 }
 
 template <typename From>
-void castToString(const std::string& a_to, const From* a_from)
+GetValueResult castToString(std::string& a_to, const From* a_from)
 {
     assert(a_from);
     a_to = std::to_string(*a_from);//TODO: use custom to avoid localization issues
+    return GetValueResult::Ok_WithCast; //TODO: add check
 }
 
 template <typename From>
-void castToString(const std::wstring& a_to, const From* a_from)
+GetValueResult castToString(std::wstring& a_to, const From* a_from)
 {
     assert(a_from);
     a_to = std::to_wstring(*a_from);
+    return GetValueResult::Ok_WithCast; //TODO: add check
 }
 
 
@@ -109,6 +111,19 @@ const T* findTagLinearSearch(const ListT& a_tags, const Tag a_tag)
     if (a_tags.cend() == findIt)
         return nullptr;
     return &(*findIt);
+}
+
+template <typename T>
+GetValueResult GetFromNoValue(T& /*a_value*/)
+{
+    return GetValueResult::FailedCast;
+}
+
+template <>
+inline GetValueResult GetFromNoValue(std::string& a_value)
+{
+    a_value = std::string();
+    return GetValueResult::Ok_NoCast;
 }
 
 }//namespace details
@@ -327,18 +342,18 @@ GetValueResult SingleValue::get(std::basic_string<T>& a_result) const
     switch (m_vr)
     {
         case VRType::SL:
-            return castToString(a_result, &m_value.m_sint32);
+            return details::castToString(a_result, &m_value.m_sint32);
         case VRType::UL:
         case VRType::OL:
-            return castToString(a_result, &m_value.m_uint32);
+            return details::castToString(a_result, &m_value.m_uint32);
         case VRType::SS:
-            return castToString(a_result, &m_value.m_sint16);
+            return details::castToString(a_result, &m_value.m_sint16);
         case VRType::US:
         case VRType::OW:
-            return castToString(a_result, &m_value.m_uint16);
+            return details::castToString(a_result, &m_value.m_uint16);
         case VRType::FL:
         case VRType::OF:
-            return castToString(a_result, &m_value.m_float);
+            return details::castToString(a_result, &m_value.m_float);
         default:
             assert(false);
             break;
@@ -402,7 +417,7 @@ template <typename T, bool Realloc>
 const T* SortedList_Tag_Base<T, Realloc>::getTagPtr(const Tag a_tag, bool a_is_sorted) const
 {
     const T* result = nullptr;
-    if (a_isSorted)
+    if (a_is_sorted)
         result = details::findTagBinSearch<T>(m_list, a_tag);
     else
         result = details::findTagLinearSearch<T>(m_list, a_tag);
@@ -435,7 +450,7 @@ GetValueResult SortedList_Tag_ValuePtr<T>::get(const Tag a_tag, V& a_result, boo
     const T* valuePtr = Base::getTagPtr(a_tag, a_is_sorted);
     if (!valuePtr)
         return GetValueResult::DoesNotExists;
-    return (*valuePtr)->get(a_result);
+    return (valuePtr)->get(a_result);
 }
 
 

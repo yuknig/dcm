@@ -56,6 +56,23 @@ bool Group::hasTag(const Tag a_tag) const
     return false;
 }
 
+bool Group::hasValue(const Tag a_tag) const
+{
+    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
+        return false;
+    if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
+        return true;
+    if (m_stringValues.hasTag(a_tag, m_valuesSorted[ValueBit::String]))
+        return true;
+    if (m_shortStringValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortString]))
+        return true;
+    if (m_multiValues.hasTag(a_tag, m_valuesSorted[ValueBit::Multi]))
+        return true;
+    if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
+        return true;
+    return false;
+}
+
 void Group::sort(bool a_recursive)
 {
     m_noValues.sort();
