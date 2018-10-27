@@ -1,3 +1,4 @@
+#include "../Util/CastValue.h"
 #include <type_traits>
 #include <limits>
 #include <cassert>
@@ -9,70 +10,70 @@ namespace dcm
 namespace details
 {
 
-template <typename To>
-GetValueResult castCopy(To& a_to, const To* a_from)
-{
-    assert(a_from);
-
-    a_to = *a_from;
-    return GetValueResult::Ok_NoCast;
-}
-
-template <typename To, typename From>
-GetValueResult castNoCheck(To& a_to, const From* a_from)
-{
-    static_assert((sizeof(To) > sizeof(From)) ||
-                  (std::is_floating_point<To>::value), "Wrong types");
-    assert(a_from);
-
-    a_to = static_cast<To>(*a_from);
-    return GetValueResult::Ok_WithCast;
-}
-
-template <typename Comp, typename To, typename From>
-GetValueResult castUnsignedToSigned(To& a_to, const From* a_from)
-{
-    //static_assert(std::is_same<Comp, typename std::common_type<To, From>::type>::value, "Wrong Comp type");
-    static_assert(std::is_unsigned<From>::value, "Wrong From type");
-    static_assert(std::is_signed<To>::value, "Wrong To type");
-    assert(a_from);
-
-    if (static_cast<Comp>(std::numeric_limits<To>::max()) < static_cast<Comp>(*a_from))
-        return GetValueResult::FailedCast;
-
-    a_to = static_cast<To>(*a_from);
-    return GetValueResult::Ok_WithCast;
-}
-
-template <typename Comp, typename To, typename From>
-GetValueResult castSignedToUnsigned(To& a_to, const From* a_from)
-{
-    //static_assert(std::is_same<Comp, typename std::common_type<To, From>::type>::value, "Wrong Comp type");
-    static_assert(std::is_signed<From>::value, "Wrong From type");
-    static_assert(std::is_unsigned<To>::value, "Wrong To type");
-    assert(a_from);
-
-    if ((0 > *a_from) || (static_cast<Comp>(std::numeric_limits<To>::max()) < static_cast<Comp>(*a_from)))
-        return GetValueResult::FailedCast;
-
-    a_to = static_cast<To>(*a_from);
-    return GetValueResult::Ok_WithCast;
-}
-
-template <typename Comp, typename To, typename From>
-GetValueResult castDown(To& a_to, const From* a_from)
-{
-    //static_assert(sizeof(Comp) == sizeof(typename std::common_type<To, From>::type), "WrongSize");
-    //static_assert(std::is_same<Comp, typename std::common_type<To, From>::type>::value, "Wrong Comp type");
-    assert(a_from);
-
-    if ((static_cast<Comp>(std::numeric_limits<To>::lowest()) > static_cast<Comp>(*a_from)) ||
-        (static_cast<Comp>(std::numeric_limits<To>::max()) < static_cast<Comp>(*a_from)))
-        return GetValueResult::FailedCast;
-
-    a_to = static_cast<To>(*a_from);
-    return GetValueResult::Ok_WithCast;
-}
+//template <typename To>
+//GetValueResult castCopy(To& a_to, const To* a_from)
+//{
+//    assert(a_from);
+//
+//    a_to = *a_from;
+//    return GetValueResult::Ok_NoCast;
+//}
+//
+//template <typename To, typename From>
+//GetValueResult castNoCheck(To& a_to, const From* a_from)
+//{
+//    static_assert((sizeof(To) > sizeof(From)) ||
+//                  (std::is_floating_point<To>::value), "Wrong types");
+//    assert(a_from);
+//
+//    a_to = static_cast<To>(*a_from);
+//    return GetValueResult::Ok_WithCast;
+//}
+//
+//template <typename Comp, typename To, typename From>
+//GetValueResult castUnsignedToSigned(To& a_to, const From* a_from)
+//{
+//    //static_assert(std::is_same<Comp, typename std::common_type<To, From>::type>::value, "Wrong Comp type");
+//    static_assert(std::is_unsigned<From>::value, "Wrong From type");
+//    static_assert(std::is_signed<To>::value, "Wrong To type");
+//    assert(a_from);
+//
+//    if (static_cast<Comp>(std::numeric_limits<To>::max()) < static_cast<Comp>(*a_from))
+//        return GetValueResult::FailedCast;
+//
+//    a_to = static_cast<To>(*a_from);
+//    return GetValueResult::Ok_WithCast;
+//}
+//
+//template <typename Comp, typename To, typename From>
+//GetValueResult castSignedToUnsigned(To& a_to, const From* a_from)
+//{
+//    //static_assert(std::is_same<Comp, typename std::common_type<To, From>::type>::value, "Wrong Comp type");
+//    static_assert(std::is_signed<From>::value, "Wrong From type");
+//    static_assert(std::is_unsigned<To>::value, "Wrong To type");
+//    assert(a_from);
+//
+//    if ((0 > *a_from) || (static_cast<Comp>(std::numeric_limits<To>::max()) < static_cast<Comp>(*a_from)))
+//        return GetValueResult::FailedCast;
+//
+//    a_to = static_cast<To>(*a_from);
+//    return GetValueResult::Ok_WithCast;
+//}
+//
+//template <typename Comp, typename To, typename From>
+//GetValueResult castDown(To& a_to, const From* a_from)
+//{
+//    //static_assert(sizeof(Comp) == sizeof(typename std::common_type<To, From>::type), "WrongSize");
+//    //static_assert(std::is_same<Comp, typename std::common_type<To, From>::type>::value, "Wrong Comp type");
+//    assert(a_from);
+//
+//    if ((static_cast<Comp>(std::numeric_limits<To>::lowest()) > static_cast<Comp>(*a_from)) ||
+//        (static_cast<Comp>(std::numeric_limits<To>::max()) < static_cast<Comp>(*a_from)))
+//        return GetValueResult::FailedCast;
+//
+//    a_to = static_cast<To>(*a_from);
+//    return GetValueResult::Ok_WithCast;
+//}
 
 template <typename From>
 GetValueResult castToString(std::string& a_to, const From* a_from)
@@ -132,212 +133,251 @@ inline GetValueResult GetFromNoValue(std::string& a_value)
 //SingleValue
 ////////////////////////////////////////
 
+template <typename ToT>
+CastResult castSingleValue(const SingleValue& a_from, const ToT& a_result)
+{
+    switch (a_from.m_vr)
+    {
+        case VRType::SL:
+            return castValue(m_value.m_sint32, a_result);
+        case VRType::UL:
+        case VRType::OL:
+            return castValue(m_value.m_uint32, a_result);
+        case VRType::SS:
+            return castValue(m_value.m_int16, a_result);
+        case VRType::US:
+        case VRType::OW:
+            return castValue(m_value.m_uint16, a_result);
+        case VRType::FL:
+        case VRType::OF:
+            return castValue(m_value.m_float, a_result);
+    }
+    assert(false);
+    return GetValueResult::FailedCast;
+}
+
+inline GetValueResult CastResult_To_GetValueResult(const CastResult& a_from)
+{
+    switch (a_from)
+    {
+        case CastResult::Ok_NoCast:
+            return GetValueResult::Ok_NoCast;
+        case CastResult::Ok_WithCast:
+            return GetValueResult::Ok_WithCast;
+        case CastResult::FailedCast:
+            return GetValueResult::FailedCast;
+    }
+    assert(false);
+    return GetValueResult::FailedCast;
+}
+
+
 template <typename T>
 GetValueResult SingleValue::get(T& a_result) const
 {
-    assert(false);
-    return GetValueResult::FailedCast;//not implemented
+    const auto cast_result = castSingleValue(m_value, a_result);
+    return CastResult_To_GetValueResult(cast_result);
 }
+//
+//template <>
+//inline GetValueResult SingleValue::get(int32_t& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castCopy(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castUnsignedToSigned<uint32_t>(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castNoCheck(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castNoCheck(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castDown<float>(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
+//
+//template <>
+//inline GetValueResult SingleValue::get(uint32_t& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castSignedToUnsigned<uint32_t>(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castCopy(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castSignedToUnsigned<uint32_t>(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castNoCheck(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castSignedToUnsigned<float>(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
+//
+//template <>
+//inline GetValueResult SingleValue::get(int64_t& a_result) const
+//{
+//    //no 64bit int types in Dicom
+//    int32_t result = 0;
+//    const GetValueResult res = get(result);
+//    if (GetValueSucceeded(res))
+//        a_result = result;
+//    return res;
+//}
+//
+//template <>
+//inline GetValueResult SingleValue::get(uint64_t& a_result) const
+//{
+//    //no 64bit int types in Dicom
+//    uint32_t result = 0;
+//    const GetValueResult res = get(result);
+//    if (GetValueSucceeded(res))
+//        a_result = result;
+//    return res;
+//}
+//
+//template<>
+//inline GetValueResult SingleValue::get(int16_t& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castDown<int32_t>(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castUnsignedToSigned<uint32_t>(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castCopy(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castUnsignedToSigned<int32_t>(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castDown<float>(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
+//
+//template<>
+//inline GetValueResult SingleValue::get(uint16_t& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castSignedToUnsigned<int32_t>(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castDown<uint32_t>(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castSignedToUnsigned<int32_t>(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castCopy(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castDown<float>(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
+//
+//template<>
+//inline GetValueResult SingleValue::get(int8_t& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castDown<int32_t>(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castUnsignedToSigned<uint32_t>(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castDown<int16_t>(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castUnsignedToSigned<uint16_t>(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castDown<float>(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
+//
+//template<>
+//inline GetValueResult SingleValue::get(uint8_t& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castSignedToUnsigned<int32_t>(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castDown<uint32_t>(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castSignedToUnsigned<int16_t>(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castDown<uint16_t>(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castDown<float>(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
+//
+//template<>
+//inline GetValueResult SingleValue::get(float& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castNoCheck(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castNoCheck(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castNoCheck(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castNoCheck(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castCopy(a_result, &m_value.m_float);
+//        default:
+//            break;
+//    }
+//    assert(false);
+//    return GetValueResult::FailedCast;
+//}
 
-template <>
-inline GetValueResult SingleValue::get(int32_t& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castCopy(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castUnsignedToSigned<uint32_t>(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castNoCheck(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castNoCheck(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castDown<float>(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template <>
-inline GetValueResult SingleValue::get(uint32_t& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castSignedToUnsigned<uint32_t>(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castCopy(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castSignedToUnsigned<uint32_t>(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castNoCheck(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castSignedToUnsigned<float>(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template <>
-inline GetValueResult SingleValue::get(int64_t& a_result) const
-{
-    //no 64bit int types in Dicom
-    int32_t result = 0;
-    const GetValueResult res = get(result);
-    if (GetValueSucceeded(res))
-        a_result = result;
-    return res;
-}
-
-template <>
-inline GetValueResult SingleValue::get(uint64_t& a_result) const
-{
-    //no 64bit int types in Dicom
-    uint32_t result = 0;
-    const GetValueResult res = get(result);
-    if (GetValueSucceeded(res))
-        a_result = result;
-    return res;
-}
-
-template<>
-inline GetValueResult SingleValue::get(int16_t& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castDown<int32_t>(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castUnsignedToSigned<uint32_t>(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castCopy(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castUnsignedToSigned<int32_t>(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castDown<float>(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template<>
-inline GetValueResult SingleValue::get(uint16_t& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castSignedToUnsigned<int32_t>(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castDown<uint32_t>(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castSignedToUnsigned<int32_t>(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castCopy(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castDown<float>(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template<>
-inline GetValueResult SingleValue::get(int8_t& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castDown<int32_t>(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castUnsignedToSigned<uint32_t>(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castDown<int16_t>(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castUnsignedToSigned<uint16_t>(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castDown<float>(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template<>
-inline GetValueResult SingleValue::get(uint8_t& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castSignedToUnsigned<int32_t>(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castDown<uint32_t>(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castSignedToUnsigned<int16_t>(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castDown<uint16_t>(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castDown<float>(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template<>
-inline GetValueResult SingleValue::get(float& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castNoCheck(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castNoCheck(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castNoCheck(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castNoCheck(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castCopy(a_result, &m_value.m_float);
-        default:
-            break;
-    }
-    assert(false);
-    return GetValueResult::FailedCast;
-}
-
-template <typename T>
-GetValueResult SingleValue::get(std::basic_string<T>& a_result) const
+template <typename CharT>
+GetValueResult SingleValue::get(std::basic_string<CharT>& a_result) const
 {
     switch (m_vr)
     {
@@ -453,22 +493,14 @@ GetValueResult SortedList_Tag_ValuePtr<T>::get(const Tag a_tag, V& a_result, boo
     return (valuePtr)->get(a_result);
 }
 
-
 ////////////////////////////////////////
-//SingleValues
+// Group
 ////////////////////////////////////////
 
 template <>
-inline void SingleValues::add(bool& a_is_sorted, const Tag a_tag, const VRType a_vr, const double& a_value)
+inline void Group::addTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream)
 {
-    assert((VRType::FD == a_vr) || (VRType::OD == a_vr));
-
-    SingleValue value(a_tag, a_vr, static_cast<uint32_t>(m_doubles.size()));
-    m_list.emplace_back(std::move(value));
-    m_doubles.emplace_back(a_value);
-    a_is_sorted = areLastTagsSorted();
+    assert(false); //TODO: implement
 }
-
-//TODO: getVector()
 
 }//namespace dcm

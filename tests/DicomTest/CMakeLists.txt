@@ -12,6 +12,7 @@ set (HEADERS
              )
 
 set (SOURCES src/main.cpp
+             src/CastValueTests.cpp
              src/MVectorTests.cpp
              )
 

@@ -3,7 +3,7 @@
 
 #include <Dicom/Tag.h>
 
-#define TagDef(GroupNum, ElementNum, Desc) const uint32_t Desc((GroupNum << 16) | ElementNum);
+#define TagDef(GroupNum, ElementNum, Desc) const uint32_t Desc((ElementNum << 16) | GroupNum);
 
 namespace dcm
 {

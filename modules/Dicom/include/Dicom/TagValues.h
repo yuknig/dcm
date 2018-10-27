@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
+#include <type_traits>
 
 namespace dcm
 {
@@ -70,20 +71,6 @@ protected://data
     std::unique_ptr<T> m_valuePtr;
 };
 
-
-enum GetValueResult
-{
-    DoesNotExists = 0,
-    FailedCast    = 1,
-    Ok_WithCast   = 2,
-    Ok_NoCast     = 3
-};
-
-inline bool GetValueSucceeded(const GetValueResult a_result)
-{
-    return (GetValueResult::Ok_WithCast <= a_result);
-}
-
 union SingleValueUnion
 {
 public://constructors
@@ -126,11 +113,24 @@ public://data
     int16_t  m_sint16;
     uint8_t  m_uint8;
     uint8_t  m_sint8;
-    char     m_char;
+    char     m_char; //TODO: delete?
     float    m_float;
 };
 static_assert(sizeof(SingleValueUnion) == 4, "ValueUnion wrong layout");
 
+
+enum GetValueResult
+{
+    DoesNotExists = 0,
+    FailedCast = 1,
+    Ok_WithCast = 2,
+    Ok_NoCast = 3
+};
+
+inline bool GetValueSucceeded(const GetValueResult a_result)
+{
+    return (GetValueResult::Ok_WithCast <= a_result);
+}
 
 class SingleValue: public Tag_Value<SingleValueUnion> //TODO: rename to Tag_SingleValue
 {
@@ -139,16 +139,98 @@ public://functions
     explicit SingleValue(const Tag a_tag, const VRType a_vr, const T a_value)
         : Tag_Value<SingleValueUnion>(a_tag, a_vr, a_value)
     {
-        //TODO: asserts that checks matching VR/value_type
+        assert(a_vr == VRType::SL ||
+               a_vr == VRType::UL ||
+               a_vr == VRType::OL ||
+               a_vr == VRType::SS ||
+               a_vr == VRType::US ||
+               a_vr == VRType::OW ||
+               a_vr == VRType::FL ||
+               a_vr == VRType::OF ||
+               a_vr == VRType::OB);
     }
 
     template <typename T>
     GetValueResult get(T& a_result) const;
 
-    template<typename T>
-    GetValueResult get(std::basic_string<T>& a_result) const;
+    template<typename CharT>
+    GetValueResult get(std::basic_string<CharT>& a_result) const;
 };
 static_assert(sizeof(SingleValue) > 8, "dcm::SingleValue: unexpected memory layout.");
+
+
+template <size_t Size>
+class ShortArrayValueT : public Tag_Value<std::array<char, Size>>
+{
+    using Base = Tag_Value<std::array<char, Size>>;
+public:
+    ShortArrayValueT(const Tag a_tag, const VRType a_vr, const size_t a_length_in_bytes, const StreamRead& a_stream)
+        : Base(a_tag, a_vr)
+    {
+        static_assert(Size < 256, "Too big array size");
+
+        const auto length_in_bytes = std::min(a_length_in_bytes, getLengthMax());
+        assert(length_in_bytes == a_length_in_bytes);
+
+        const auto bytes_read = a_stream.readToMemInPlace(m_value.data(), length_in_bytes);
+        if (bytes_read != length_in_bytes)
+        {
+            assert(false);
+        }
+
+        for (size_t i = bytes_read; i < getLengthMax(); ++i)
+            m_value[i] = '\0';
+        m_value[Size - 1] = static_cast<unsigned char>(a_length_in_bytes);
+    }
+
+    size_t getLengthInBytes() const
+    {
+        const size_t result = static_cast<unsigned char>(m_value[Size - 1]);
+        assert(result < getLengthMax());
+        return result;
+    }
+
+    static constexpr size_t getLengthMax()
+    {
+        return Size - 1;
+    }
+
+    template <typename T>
+    GetValueResult get(T& /*a_value*/) const
+    {
+        return GetValueResult::FailedCast;
+    }
+};
+
+using ShortArrayValue = ShortArrayValueT<32>;
+
+class LongArrayValue: public Tag_ValuePtr<std::vector<char>>
+{
+    using Base = Tag_ValuePtr<std::vector<char>>;
+
+public:
+    LongArrayValue(const Tag a_tag, const VRType a_vr, const size_t a_length_in_bytes, const StreamRead& a_stream)
+        : Base(a_tag, a_vr, a_length_in_bytes)
+    {
+        const auto bytes_read = a_stream.readToMemInPlace(m_valuePtr->data(), a_length_in_bytes);
+        if (bytes_read != a_length_in_bytes)
+        {
+            assert(false);
+        }
+    }
+
+    size_t getLengthInBytes() const
+    {
+        return m_valuePtr->size();
+    }
+
+    template <typename T>
+    GetValueResult get(T& /*a_value*/) const
+    {
+        return GetValueResult::FailedCast;
+    }
+};
+
 
 template <typename T, bool Realloc>
 class SortedList_Tag_Base
@@ -209,6 +291,7 @@ private://types
 
 class SingleValues: public SortedList_Tag_Value<SingleValue, true>
 {
+    using Base = SortedList_Tag_Value<SingleValue, true>;
 public://functions
     SingleValues()
     {}
@@ -216,125 +299,19 @@ public://functions
     template <typename T>
     void add(bool& a_is_sorted, const Tag a_tag, const VRType a_vr, const T& a_value)
     {
-        static_assert(!std::is_same<T, double>::value, "Specialization for double should be used");
+        static_assert(std::is_same_v<T, uint32_t> ||
+                      std::is_same_v<T, int32_t>  ||
+                      std::is_same_v<T, uint16_t> ||
+                      std::is_same_v<T, int16_t>  ||
+                      std::is_same_v<T, uint8_t>  ||
+                      std::is_same_v<T, uint8_t>  ||
+                      std::is_same_v<T, char>     ||
+                      std::is_same_v<T, float>, "Wrong Type");
+
         Base::emplace(a_is_sorted, a_tag, a_vr, a_value);
     }
-
-private://data
-    typedef SortedList_Tag_Value<SingleValue, true> Base;
-
-private://data
-    MVector<double, SizeType, true> m_doubles; // store double values separately
 };
 
-class StringValue: public Tag_NoValue
-{
-public://functions
-    StringValue(const Tag a_tag, const VRType a_vr, const uint32_t a_length, const StreamRead& a_stream)
-        : Tag_NoValue(a_tag, a_vr)
-        , m_value(a_length, '\0')
-    {
-        size_t bytes_read = a_stream.readToMemInPlace(&m_value[0], a_length);
-        if (bytes_read != a_length)
-        {
-            assert(false);
-        }
-    }
-
-    /*const std::string& get() const
-    {
-        return m_value;
-    }*/
-
-    GetValueResult get(std::string& a_value) const
-    {
-        a_value = m_value;
-        return GetValueResult::Ok_NoCast;
-    }
-
-private://data
-    std::string m_value;
-};
-
-template <size_t LengthMax>
-class ShortStringValueT: public Tag_NoValue
-{
-public://functions
-    ShortStringValueT(const Tag a_tag, const VRType a_vr, const uint32_t a_length, const StreamRead& a_stream)
-        : Tag_NoValue(a_tag, a_vr)
-    {
-        assert(LengthMax > a_length);
-
-        a_stream.readToMemInPlace(m_value.data(), std::min<size_t>(a_length, LengthMax));
-        for (size_t i = a_length; i < m_value.size(); ++i)
-            m_value[i] = '\0';
-    }
-
-    GetValueResult get(std::string& a_value) const
-    {
-        a_value = std::string(m_value.data());
-        return GetValueResult::Ok_NoCast;
-    }
-
-    /*size_t length() const
-    {
-        return strlen(m_value.data());
-    }*/
-
-    static size_t getLengthMax()
-    {
-        return LengthMax;
-    }
-
-private://data
-    std::array<char, LengthMax + 1/*null terminator*/> m_value;
-};
-
-using ShortStringValue = ShortStringValueT<31>;
-
-//template<typename T>
-//inline std::vector<uint8_t> readVectorFromString(const StreamRead& a_stream, const uint32_t a_size)
-//{
-//    std::vector<uint8_t> result(a_size);
-//    assert(false);
-//    return result;
-//}
-
-class MultiValue: public Tag_ValuePtr<MVector<uint8_t, size_t, true>>
-{
-public://function
-    MultiValue(const Tag a_tag, const VRType a_vr, const uint32_t a_size_in_bytes, const StreamRead& a_stream)
-        : Base(a_tag, a_vr)
-    {
-        m_valuePtr->resize(a_size_in_bytes);
-        auto bytes_read = a_stream.readToMemInPlace(m_valuePtr->data(), a_size_in_bytes);
-        if (bytes_read != a_size_in_bytes)
-        {
-            assert(false);
-        }
-    }
-    template <typename T>
-    GetValueResult get(T& /*a_value*/) const
-    {
-        return GetValueResult::FailedCast;
-    }
-
-    template <>
-    inline GetValueResult get(std::string& a_value) const
-    {
-        assert(false);
-        return GetValueResult::Ok_WithCast;
-    }
-
-private://types
-    typedef Tag_ValuePtr<MVector<uint8_t, size_t, true>> Base;
-};
-
-//class MultiValues:public SortedList<MultiValue>
-//{
-//public:
-//    MultiValues() {}
-//};
 
 class Sequence;
 
@@ -346,44 +323,42 @@ public:
         m_valuesSorted.set();
     }
 
+    //TODO: try to make const?
     template <typename T>
     void addTag(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream)///add MultiValue, SingleValue or NoValue
     {
         if (1 < a_valueElements)
         {
-            if (isStringVr(a_vr))
+            const size_t size_in_bytes = a_valueElements * sizeof(T);
+            
+            if (size_in_bytes <= ShortArrayValue::getLengthMax())
             {
-                if (ShortStringValue::getLengthMax() >= a_valueElements)
-                {
-                    bool sorted = m_valuesSorted[ValueBit::ShortString];
-                    m_shortStringValues.emplace(sorted, a_tag, a_vr, a_valueElements, a_stream);
-                    m_valuesSorted[ValueBit::ShortString] = sorted;
-                }
-                else
-                {
-                    bool sorted = m_valuesSorted[ValueBit::String];
-                    m_stringValues.emplace(sorted, a_tag, a_vr, a_valueElements, a_stream);
-                    m_valuesSorted[ValueBit::String] = sorted;
-                }
+                bool sorted = m_valuesSorted[ValueBit::ShortArray];
+                m_shortArrayValues.emplace(sorted, a_tag, a_vr, size_in_bytes, a_stream);
+                m_valuesSorted[ValueBit::ShortArray] = sorted;
             }
             else
             {
-                bool sorted = m_valuesSorted[ValueBit::Multi];
-                m_multiValues.emplace(sorted, a_tag, a_vr, a_valueElements, a_stream);
-                m_valuesSorted[ValueBit::Multi] = sorted;
+                bool sorted = m_valuesSorted[ValueBit::LongArray];
+                m_longArrayValues.emplace(sorted, a_tag, a_vr, size_in_bytes, a_stream);
+                m_valuesSorted[ValueBit::LongArray] = sorted;
             }
         }
         else if (1 == a_valueElements)
         {
-            addTag(a_tag, a_vr, a_stream.read<T>());
+            bool sorted = m_valuesSorted[ValueBit::Single];
+            m_singleValues.add(sorted, a_tag, a_vr, a_stream.read<T>());
+            m_valuesSorted[ValueBit::Single] = sorted;
         }
         else
         {
-            bool sorted = m_valuesSorted[ValueBit::No];
-            m_noValues.emplace(sorted, a_tag, a_vr); //for has_tag() only
-            m_valuesSorted[ValueBit::No] = sorted;
+            bool sorted = m_valuesSorted[ValueBit::NoValue];
+            m_noValues.emplace(sorted, a_tag, a_vr);
+            m_valuesSorted[ValueBit::NoValue] = sorted;
         }
     }
+
+    //TODO: specialization for double
 
     void addSequence(const Tag a_tag, std::vector<std::shared_ptr<Group>> a_groups);
 
@@ -396,7 +371,7 @@ public:
     template <typename T>
     GetValueResult getTag(const Tag a_tag, T& a_value) const
     {
-        if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
+        if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
             return details::GetFromNoValue(a_value);
 
         GetValueResult res;
@@ -404,46 +379,32 @@ public:
         if (res != GetValueResult::DoesNotExists)
             return res;
 
-        res = m_shortStringValues.get(a_tag, a_value, m_valuesSorted[ValueBit::ShortString]);
+        res = m_shortArrayValues.get(a_tag, a_value, m_valuesSorted[ValueBit::ShortArray]);
         if (res != GetValueResult::DoesNotExists)
             return res;
 
-        res = m_stringValues.get(a_tag, a_value, m_valuesSorted[ValueBit::String]);
+        res = m_longArrayValues.get(a_tag, a_value, m_valuesSorted[ValueBit::LongArray]);
         if (res != GetValueResult::DoesNotExists)
             return res;
 
-        res = m_multiValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Multi]);
-        if (res != GetValueResult::DoesNotExists)
-            return res;
+        if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
+            return GetValueResult::FailedCast;
 
         return GetValueResult::DoesNotExists;
     }
 
-protected://functions
-    template <typename T>
-    void addTag(const Tag a_tag, const VRType a_vr, const T a_value)/// Add SingleValue
-    {
-        static_assert(std::is_arithmetic<T>::value, "T should be arithmetic");
-
-        bool sorted = m_valuesSorted[ValueBit::Single];
-        m_singleValues.add(sorted, a_tag, a_vr, a_value);
-        m_valuesSorted[ValueBit::Single] = sorted;
-    }
-
 public://types
     typedef SortedList_Tag_Value<Tag_NoValue, true>      NoValues;
-    typedef SortedList_Tag_ValuePtr<MultiValue>          MultiValues;
-    typedef SortedList_Tag_Value<StringValue, false>     StringValues;
-    typedef SortedList_Tag_Value<ShortStringValue, true> ShortStringValues; // TODO: place before ordinary string
+    typedef SortedList_Tag_Value<ShortArrayValue, true>  ShortArrayValues;
+    typedef SortedList_Tag_Value<LongArrayValue, true>   LongArrayValues;
     typedef SortedList_Tag_ValuePtr<Sequence>            SequenceValues;
 
     enum ValueBit
     {
-        No = 0,
+        NoValue = 0,
         Single,
-        String,
-        ShortString,
-        Multi,
+        ShortArray,
+        LongArray,
         Sequence,
         MaxValue = Sequence
     };
@@ -451,9 +412,8 @@ public://types
 public://data
     NoValues          m_noValues;
     SingleValues      m_singleValues;
-    ShortStringValues m_shortStringValues;
-    StringValues      m_stringValues;
-    MultiValues       m_multiValues;
+    ShortArrayValues  m_shortArrayValues;
+    LongArrayValues   m_longArrayValues;
     SequenceValues    m_sequences;
     std::bitset<ValueBit::MaxValue + 1> m_valuesSorted;
 };

@@ -25,7 +25,6 @@ VRType Tag_NoValue::vr() const
 bool Tag_NoValue::operator<(const Tag_NoValue& a_rhs) const
 {
     return std::tie(m_tag, m_vr) < std::tie(a_rhs.m_tag, a_rhs.m_vr);
-
 }
 
 ////////////////////////////////////////
@@ -41,15 +40,13 @@ void Group::addSequence(const Tag a_tag, std::vector<std::shared_ptr<Group>> a_g
 
 bool Group::hasTag(const Tag a_tag) const
 {
-    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
+    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
         return true;
     if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
         return true;
-    if (m_stringValues.hasTag(a_tag, m_valuesSorted[ValueBit::String]))
+    if (m_shortArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortArray]))
         return true;
-    if (m_shortStringValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortString]))
-        return true;
-    if (m_multiValues.hasTag(a_tag, m_valuesSorted[ValueBit::Multi]))
+    if (m_longArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::LongArray]))
         return true;
     if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
         return true;
@@ -58,15 +55,13 @@ bool Group::hasTag(const Tag a_tag) const
 
 bool Group::hasValue(const Tag a_tag) const
 {
-    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::No]))
+    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
         return false;
     if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
         return true;
-    if (m_stringValues.hasTag(a_tag, m_valuesSorted[ValueBit::String]))
+    if (m_shortArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortArray]))
         return true;
-    if (m_shortStringValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortString]))
-        return true;
-    if (m_multiValues.hasTag(a_tag, m_valuesSorted[ValueBit::Multi]))
+    if (m_longArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::LongArray]))
         return true;
     if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
         return true;
@@ -77,9 +72,8 @@ void Group::sort(bool a_recursive)
 {
     m_noValues.sort();
     m_singleValues.sort();
-    m_stringValues.sort();
-    m_shortStringValues.sort();
-    m_multiValues.sort();
+    m_shortArrayValues.sort();
+    m_longArrayValues.sort();
     m_sequences.sort();
     m_valuesSorted.set();
 

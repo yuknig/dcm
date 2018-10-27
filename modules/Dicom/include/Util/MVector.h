@@ -15,6 +15,8 @@ struct FreeDeleter
 template <typename T, typename SizeT = size_t, bool Reallocatable = false>
 class MVector
 {
+    static_assert(std::is_unsigned<SizeT>::value, "Size type should be unsigned");
+
 public:
     MVector()
     {}

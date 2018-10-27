@@ -296,6 +296,15 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
     }
 
     ParserConfig config;
+    {
+        std::string transfer_syntax;
+        if (GetValueSucceeded(root->getTag(dcm::TransferSyntaxUID, transfer_syntax)))
+        {
+            if (transfer_syntax == "1.2.840.10008.1.2")
+                config.m_explicit = false;
+        }
+    }
+
     std::deque<ParseGroupDesc> groups_to_parse;
     groups_to_parse.emplace_back(ParseGroupDesc{ start_offset, a_stream.size() - start_offset, config, root.get() });
 
@@ -389,7 +398,7 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
         tag_offset += tag_desc->m_fullLength;
     }
 
-    assert(tag_offset == group.m_stream_end);
+    //assert(tag_offset == group.m_stream_end);
     return tag_offset;
 }
 
