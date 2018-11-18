@@ -139,18 +139,18 @@ CastResult castSingleValue(const SingleValue& a_from, const ToT& a_result)
     switch (a_from.m_vr)
     {
         case VRType::SL:
-            return castValue(m_value.m_sint32, a_result);
+            return castValue<int32_t>(m_value.m_sint32, a_result);
         case VRType::UL:
         case VRType::OL:
-            return castValue(m_value.m_uint32, a_result);
+            return castValue<uint32_t>(m_value.m_uint32, a_result);
         case VRType::SS:
-            return castValue(m_value.m_int16, a_result);
+            return castValue<int16_t>(m_value.m_int16, a_result);
         case VRType::US:
         case VRType::OW:
-            return castValue(m_value.m_uint16, a_result);
+            return castValue<uint16_t>(m_value.m_uint16, a_result);
         case VRType::FL:
         case VRType::OF:
-            return castValue(m_value.m_float, a_result);
+            return castValue<float>(m_value.m_float, a_result);
     }
     assert(false);
     return GetValueResult::FailedCast;
