@@ -151,9 +151,10 @@ CastResult castSingleValue(const SingleValue& a_from, const ToT& a_result)
         case VRType::FL:
         case VRType::OF:
             return castValue<float>(m_value.m_float, a_result);
+        default:
+            assert(false);
+            return GetValueResult::FailedCast;
     }
-    assert(false);
-    return GetValueResult::FailedCast;
 }
 
 inline GetValueResult CastResult_To_GetValueResult(const CastResult& a_from)
@@ -162,13 +163,13 @@ inline GetValueResult CastResult_To_GetValueResult(const CastResult& a_from)
     {
         case CastResult::Ok_NoCast:
             return GetValueResult::Ok_NoCast;
-        case CastResult::Ok_WithCast:
+        case CastResult::Ok_CastLoseless:
+        case CastResult::Ok_CastLossy:
             return GetValueResult::Ok_WithCast;
         case CastResult::FailedCast:
+        default:
             return GetValueResult::FailedCast;
     }
-    assert(false);
-    return GetValueResult::FailedCast;
 }
 
 
