@@ -1,9 +1,6 @@
-mkdir project
-mkdir project\mingw
-
-cd project\mingw
-
-cmake.exe ..\.. -G "MinGW Makefiles"
+set BUILD_DIR="mingw"
+set _CMAKE_GEN_="MinGW Makefiles"
+call init_project.bat
 
 mingw32-make Dcm -j5
 mingw32-make gtest -j5
