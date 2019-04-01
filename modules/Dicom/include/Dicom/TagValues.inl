@@ -1,8 +1,10 @@
-#include "../Util/CastValue.h"
+#include <Util/CastValue.h>
 #include <type_traits>
 #include <limits>
 #include <cassert>
+#include <cstdint>
 #include <string>
+
 
 namespace dcm
 {
@@ -75,21 +77,22 @@ namespace details
 //    return GetValueResult::Ok_WithCast;
 //}
 
-template <typename From>
-GetValueResult castToString(std::string& a_to, const From* a_from)
-{
-    assert(a_from);
-    a_to = std::to_string(*a_from);//TODO: use custom to avoid localization issues
-    return GetValueResult::Ok_WithCast; //TODO: add check
-}
-
-template <typename From>
-GetValueResult castToString(std::wstring& a_to, const From* a_from)
-{
-    assert(a_from);
-    a_to = std::to_wstring(*a_from);
-    return GetValueResult::Ok_WithCast; //TODO: add check
-}
+//
+//template <typename From>
+//GetValueResult castToString(std::string& a_to, const From* a_from)
+//{
+//    assert(a_from);
+//    a_to = std::to_string(*a_from);//TODO: use custom to avoid localization issues
+//    return GetValueResult::Ok_WithCast; //TODO: add check
+//}
+//
+//template <typename From>
+//GetValueResult castToString(std::wstring& a_to, const From* a_from)
+//{
+//    assert(a_from);
+//    a_to = std::to_wstring(*a_from);
+//    return GetValueResult::Ok_WithCast; //TODO: add check
+//}
 
 
 template <typename T, typename ListT>
@@ -134,26 +137,28 @@ inline GetValueResult GetFromNoValue(std::string& a_value)
 ////////////////////////////////////////
 
 template <typename ToT>
-CastResult castSingleValue(const SingleValue& a_from, const ToT& a_result)
+CastResult castSingleValue(const SingleValue& a_from, ToT& a_result)
 {
-    switch (a_from.m_vr)
+    const auto& src = a_from.value();
+
+    switch (a_from.vr())
     {
         case VRType::SL:
-            return castValue<int32_t>(m_value.m_sint32, a_result);
+            return CastValue<int32_t>(src.m_sint32, a_result);
         case VRType::UL:
         case VRType::OL:
-            return castValue<uint32_t>(m_value.m_uint32, a_result);
+            return CastValue<uint32_t>(src.m_uint32, a_result);
         case VRType::SS:
-            return castValue<int16_t>(m_value.m_int16, a_result);
+            return CastValue<int16_t>(src.m_sint16, a_result);
         case VRType::US:
         case VRType::OW:
-            return castValue<uint16_t>(m_value.m_uint16, a_result);
+            return CastValue<uint16_t>(src.m_uint16, a_result);
         case VRType::FL:
         case VRType::OF:
-            return castValue<float>(m_value.m_float, a_result);
+            return CastValue<float>(src.m_float, a_result);
         default:
             assert(false);
-            return GetValueResult::FailedCast;
+            return CastResult::FailedCast;
     }
 }
 
@@ -176,7 +181,7 @@ inline GetValueResult CastResult_To_GetValueResult(const CastResult& a_from)
 template <typename T>
 GetValueResult SingleValue::get(T& a_result) const
 {
-    const auto cast_result = castSingleValue(m_value, a_result);
+    const CastResult cast_result = castSingleValue(*this, a_result);
     return CastResult_To_GetValueResult(cast_result);
 }
 //
@@ -377,30 +382,30 @@ GetValueResult SingleValue::get(T& a_result) const
 //    return GetValueResult::FailedCast;
 //}
 
-template <typename CharT>
-GetValueResult SingleValue::get(std::basic_string<CharT>& a_result) const
-{
-    switch (m_vr)
-    {
-        case VRType::SL:
-            return details::castToString(a_result, &m_value.m_sint32);
-        case VRType::UL:
-        case VRType::OL:
-            return details::castToString(a_result, &m_value.m_uint32);
-        case VRType::SS:
-            return details::castToString(a_result, &m_value.m_sint16);
-        case VRType::US:
-        case VRType::OW:
-            return details::castToString(a_result, &m_value.m_uint16);
-        case VRType::FL:
-        case VRType::OF:
-            return details::castToString(a_result, &m_value.m_float);
-        default:
-            assert(false);
-            break;
-    }
-    return GetValueResult::FailedCast;
-}
+//template <typename CharT>
+//GetValueResult SingleValue::get(std::basic_string<CharT>& a_result) const
+//{
+//    switch (m_vr)
+//    {
+//        case VRType::SL:
+//            return details::castToString(a_result, &m_value.m_sint32);
+//        case VRType::UL:
+//        case VRType::OL:
+//            return details::castToString(a_result, &m_value.m_uint32);
+//        case VRType::SS:
+//            return details::castToString(a_result, &m_value.m_sint16);
+//        case VRType::US:
+//        case VRType::OW:
+//            return details::castToString(a_result, &m_value.m_uint16);
+//        case VRType::FL:
+//        case VRType::OF:
+//            return details::castToString(a_result, &m_value.m_float);
+//        default:
+//            assert(false);
+//            break;
+//    }
+//    return GetValueResult::FailedCast;
+//}
 
 ////////////////////////////////////////
 //SortedList_Tag

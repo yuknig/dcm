@@ -153,8 +153,8 @@ public://functions
     template <typename T>
     GetValueResult get(T& a_result) const;
 
-    template<typename CharT>
-    GetValueResult get(std::basic_string<CharT>& a_result) const;
+    //template<typename CharT>
+    //GetValueResult get(std::basic_string<CharT>& a_result) const;
 };
 static_assert(sizeof(SingleValue) > 8, "dcm::SingleValue: unexpected memory layout.");
 
@@ -172,20 +172,20 @@ public:
         const auto length_in_bytes = std::min(a_length_in_bytes, getLengthMax());
         assert(length_in_bytes == a_length_in_bytes);
 
-        const auto bytes_read = a_stream.readToMemInPlace(m_value.data(), length_in_bytes);
+        const auto bytes_read = a_stream.readToMemInPlace(Base::m_value.data(), length_in_bytes);
         if (bytes_read != length_in_bytes)
         {
             assert(false);
         }
 
         for (size_t i = bytes_read; i < getLengthMax(); ++i)
-            m_value[i] = '\0';
-        m_value[Size - 1] = static_cast<unsigned char>(a_length_in_bytes);
+            Base::m_value[i] = '\0';
+        Base::m_value[Size - 1] = static_cast<unsigned char>(a_length_in_bytes);
     }
 
     size_t getLengthInBytes() const
     {
-        const size_t result = static_cast<unsigned char>(m_value[Size - 1]);
+        const size_t result = static_cast<unsigned char>(Base::m_value[Size - 1]);
         assert(result < getLengthMax());
         return result;
     }
@@ -372,7 +372,7 @@ public:
     GetValueResult getTag(const Tag a_tag, T& a_value) const
     {
         if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
-            return details::GetFromNoValue(a_value);
+            return details::GetFromNoValue<T>(a_value);
 
         GetValueResult res;
         res = m_singleValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Single]);

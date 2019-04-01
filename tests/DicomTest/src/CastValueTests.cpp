@@ -279,5 +279,14 @@ TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastIntToChar)
     EXPECT_EQ(100, to);
 }
 
+TEST(CastValue, RequireThat_CastValue_Returns___WhenCastIntToString)
+{
+    int from = -100;
+    std::string to;
+
+    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
+    EXPECT_STREQ("-100", to.c_str());
+}
+
 //TODO: check signed char, sint8_t etc
 

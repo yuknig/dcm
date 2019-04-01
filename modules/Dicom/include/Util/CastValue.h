@@ -2,6 +2,7 @@
 #define _CAST_VALUE_2B4B4879_93AE_47A7_881F_FD6A4A5F6544_
 
 #include <type_traits>
+#include <sstream>
 
 enum class CastResult
 {
@@ -70,7 +71,7 @@ inline CastResult CastValue_FromSignedInt_ToUnsignedInt_ToBigger(const FromT& a_
     assert(std::is_integral<FromT>::value);
     assert(std::is_signed<FromT>::value);
     assert(std::is_integral<ToT>::value);
-    assert(std::is_unsigned<FromT>::value);
+    assert(std::is_unsigned<ToT>::value);
     assert(sizeof(FromT) <= sizeof(ToT));
 
     if (a_from < 0)
@@ -103,7 +104,7 @@ inline CastResult CastValue_FromUnsignedInt_ToSignedInt_ToBigger(const FromT& a_
     assert(std::is_integral<FromT>::value);
     assert(std::is_unsigned<FromT>::value);
     assert(std::is_integral<ToT>::value);
-    assert(std::is_signed<FromT>::value);
+    assert(std::is_signed<ToT>::value);
     assert(sizeof(FromT) < sizeof(ToT));
 
     a_to = static_cast<ToT>(a_from);
@@ -166,6 +167,21 @@ inline CastResult CastValue_FromDouble_ToFloat(const FromT& a_from, ToT& a_to) {
     return CastResult::Ok_CastLossy;
 }
 
+
+template <typename FromT, typename CharT>
+inline CastResult CastValue_ToString(const FromT& a_from, std::basic_string<CharT>& a_to) {
+
+    std::basic_ostringstream<CharT> wss;
+    wss << a_from;
+    a_to = wss.str();
+    return CastResult::Ok_CastLoseless; //TODO: special enum?
+}
+
+template <typename T>
+bool IsString() {
+    return (std::is_base_of<std::basic_string<char>, T>::value ||
+            std::is_base_of<std::basic_string<wchar_t>, T>::value);
+}
 
 } // namespace detail
 
@@ -230,6 +246,16 @@ CastResult CastValue(const FromT& a_from, ToT& a_to) {
     }
     else
         return CastResult::FailedCast;
+}
+
+template <typename FromT, typename CharToT>
+CastResult CastValueToString(const FromT& a_from, std::basic_string<CharToT>& a_to) {
+    return detail::CastValue_ToString(a_from, a_to);
+}
+
+template <typename FromT, typename CharToT>
+CastResult CastValue(const FromT& a_from, std::basic_string<CharToT>& a_to) {
+    return CastValueToString(a_from, a_to);
 }
 
 #endif // _CAST_VALUE_2B4B4879_93AE_47A7_881F_FD6A4A5F6544_
