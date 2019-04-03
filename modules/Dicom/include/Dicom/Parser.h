@@ -2,7 +2,7 @@
 #define _PARSER_C6B68E8E_AFAF_499F_95AE_249B47CE139F_
 
 #include <Dicom/Vr.h>
-#include <Dicom/Tag.h>
+#include <Dicom/TagStruct/TagNum.h>
 #include <Dicom/TagValues.h>
 
 #include <deque>

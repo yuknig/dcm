@@ -1,7 +1,7 @@
 #ifndef _DICT_A37BD151_8213_400B_B455_8E5B4E0937B4_
 #define _DICT_A37BD151_8213_400B_B455_8E5B4E0937B4_
 
-#include <Dicom/Tag.h>
+#include <Dicom/TagStruct/TagNum.h>
 
 #define TagDef(GroupNum, ElementNum, Desc) const uint32_t Desc((ElementNum << 16) | GroupNum);
 

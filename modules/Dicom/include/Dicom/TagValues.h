@@ -2,7 +2,7 @@
 #define _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 
 #include <Dicom/Vr.h>
-#include <Dicom/Tag.h>
+#include <Dicom/TagStruct/TagNum.h>
 #include <Dicom/Util.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
