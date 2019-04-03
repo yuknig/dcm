@@ -1,7 +1,6 @@
 #ifndef _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 #define _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 
-#include <Dicom/Vr.h>
 #include <Dicom/TagStruct/TagNum.h>
 #include <Dicom/TagStruct/TagValueBasic.h>
 #include <Dicom/Util.h>

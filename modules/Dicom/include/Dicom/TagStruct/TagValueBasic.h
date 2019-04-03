@@ -2,7 +2,7 @@
 #define _TAG_VALUE_BASIC_E9402C2E_177D_4ADC_A4E3_B4B0DAEE26AB_
 
 #include <Dicom/TagStruct/TagNum.h>
-#include <Dicom/Vr.h>
+#include <Dicom/TagStruct/Vr.h>
 #include <cassert>
 #include <memory>
 

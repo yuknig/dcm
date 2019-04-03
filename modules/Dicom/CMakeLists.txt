@@ -8,8 +8,8 @@ include_directories(include)
 
 set (HEADERS include/Dicom/TagStruct/TagNum.h
              include/Dicom/TagStruct/TagValueBasic.h
+             include/Dicom/TagStruct/Vr.h
              include/Dicom/Parser.h
-             include/Dicom/Vr.h
              include/Dicom/TagValues.h
              include/Dicom/TagValues.inl
              include/Dicom/Tags.h

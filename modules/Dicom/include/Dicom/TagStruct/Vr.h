@@ -6,8 +6,7 @@
 namespace dcm
 {
 
-enum class VRType: uint16_t
-{
+enum class VRType: uint16_t {
     Undefined = 0,
     AE,
     AS,
@@ -43,8 +42,7 @@ enum class VRType: uint16_t
     Max = UT
 };
 
-enum class VRCode: uint16_t
-{
+enum class VRCode: uint16_t {
     Undefined = 0,
     AE = 0x4541,
     AS = 0x5341,
