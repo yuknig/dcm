@@ -26,9 +26,9 @@ template <typename T>
 class Tag_Value: public Tag_NoValue {
 public:
     template <typename... ArgsT>
-    Tag_Value(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuctArgs)
+    Tag_Value(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuct_args)
         : Tag_NoValue(a_tag, a_vr)
-        , m_value(std::forward<ArgsT>(a_constuctArgs)...)
+        , m_value(std::forward<ArgsT>(a_constuct_args)...)
     {}
 
     const T& value() const {
@@ -43,18 +43,18 @@ template <typename T>
 class Tag_ValuePtr: public Tag_NoValue {
 public:
     template <typename... ArgsT>
-    Tag_ValuePtr(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuctArgs)
+    Tag_ValuePtr(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuct_args)
         : Tag_NoValue(a_tag, a_vr)
-        , m_valuePtr(std::make_unique<T>(std::forward<ArgsT>(a_constuctArgs)...))
+        , m_value_ptr(std::make_unique<T>(std::forward<ArgsT>(a_constuct_args)...))
     {}
 
     const T& value() const {
-        assert(m_valuePtr);
-        return *m_valuePtr;
+        assert(m_value_ptr);
+        return *m_value_ptr;
     }
 
 protected:
-    std::unique_ptr<T> m_valuePtr;
+    std::unique_ptr<T> m_value_ptr;
 };
 
 } // namespace dcm

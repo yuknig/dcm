@@ -160,7 +160,7 @@ public:
     LongArrayValue(const Tag a_tag, const VRType a_vr, const size_t a_length_in_bytes, const StreamRead& a_stream)
         : Base(a_tag, a_vr, a_length_in_bytes)
     {
-        const auto bytes_read = a_stream.readToMemInPlace(m_valuePtr->data(), a_length_in_bytes);
+        const auto bytes_read = a_stream.readToMemInPlace(m_value_ptr->data(), a_length_in_bytes);
         if (bytes_read != a_length_in_bytes)
         {
             assert(false);
@@ -169,7 +169,7 @@ public:
 
     size_t getLengthInBytes() const
     {
-        return m_valuePtr->size();
+        return m_value_ptr->size();
     }
 
     template <typename T>
