@@ -6,7 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 
-set (HEADERS include/Dicom/TagStruct/TagNum.h
+set (HEADERS 
+             include/Dicom/TagStruct/SingleValue.h
+             include/Dicom/TagStruct/TagNum.h
              include/Dicom/TagStruct/TagValueBasic.h
              include/Dicom/TagStruct/Vr.h
              include/Dicom/Parser.h
@@ -25,7 +27,8 @@ set (HEADERS include/Dicom/TagStruct/TagNum.h
              include/Util/MVector.h
              )
 
-set (SOURCES src/TagNum.cpp
+set (SOURCES 
+             src/TagNum.cpp
              src/TagValueBasic.cpp
              src/Parser.cpp
              src/TagValues.cpp

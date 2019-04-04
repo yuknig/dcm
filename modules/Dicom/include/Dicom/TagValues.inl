@@ -117,73 +117,8 @@ const T* findTagLinearSearch(const ListT& a_tags, const Tag a_tag)
     return &(*findIt);
 }
 
-template <typename T>
-GetValueResult GetFromNoValue(T& /*a_value*/)
-{
-    return GetValueResult::FailedCast;
-}
-
-template <>
-inline GetValueResult GetFromNoValue(std::string& a_value)
-{
-    a_value = std::string();
-    return GetValueResult::Ok_NoCast;
-}
-
 }//namespace details
 
-////////////////////////////////////////
-//SingleValue
-////////////////////////////////////////
-
-template <typename ToT>
-CastResult castSingleValue(const SingleValue& a_from, ToT& a_result)
-{
-    const auto& src = a_from.value();
-
-    switch (a_from.vr())
-    {
-        case VRType::SL:
-            return CastValue<int32_t>(src.m_sint32, a_result);
-        case VRType::UL:
-        case VRType::OL:
-            return CastValue<uint32_t>(src.m_uint32, a_result);
-        case VRType::SS:
-            return CastValue<int16_t>(src.m_sint16, a_result);
-        case VRType::US:
-        case VRType::OW:
-            return CastValue<uint16_t>(src.m_uint16, a_result);
-        case VRType::FL:
-        case VRType::OF:
-            return CastValue<float>(src.m_float, a_result);
-        default:
-            assert(false);
-            return CastResult::FailedCast;
-    }
-}
-
-inline GetValueResult CastResult_To_GetValueResult(const CastResult& a_from)
-{
-    switch (a_from)
-    {
-        case CastResult::Ok_NoCast:
-            return GetValueResult::Ok_NoCast;
-        case CastResult::Ok_CastLoseless:
-        case CastResult::Ok_CastLossy:
-            return GetValueResult::Ok_WithCast;
-        case CastResult::FailedCast:
-        default:
-            return GetValueResult::FailedCast;
-    }
-}
-
-
-template <typename T>
-GetValueResult SingleValue::get(T& a_result) const
-{
-    const CastResult cast_result = castSingleValue(*this, a_result);
-    return CastResult_To_GetValueResult(cast_result);
-}
 //
 //template <>
 //inline GetValueResult SingleValue::get(int32_t& a_result) const

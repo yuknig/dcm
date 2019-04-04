@@ -1,8 +1,7 @@
 #ifndef _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 #define _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 
-#include <Dicom/TagStruct/TagNum.h>
-#include <Dicom/TagStruct/TagValueBasic.h>
+#include <Dicom/TagStruct/SingleValue.h>
 #include <Dicom/Util.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
@@ -18,92 +17,27 @@
 namespace dcm
 {
 
-union SingleValueUnion
+namespace detail
 {
-public://constructors
-    explicit SingleValueUnion(uint32_t a_value)
-        : m_uint32(a_value)
-    {}
-
-    explicit SingleValueUnion(int32_t a_value)
-        : m_sint32(a_value)
-    {}
-
-    explicit SingleValueUnion(uint16_t a_value)
-        : m_uint32(a_value)
-    {}
-
-    explicit SingleValueUnion(int16_t a_value)
-        : m_sint32(a_value)
-    {}
-
-    explicit SingleValueUnion(uint8_t a_value)
-        : m_uint32(a_value)
-    {}
-
-    explicit SingleValueUnion(int8_t a_value)
-        : m_sint32(a_value)
-    {}
-
-    explicit SingleValueUnion(char a_value)
-        : m_sint32(a_value)
-    {}
-
-    explicit SingleValueUnion(float a_value)
-        : m_float(a_value)
-    {}
-
-public://data
-    uint32_t m_uint32;
-    int32_t  m_sint32;
-    uint16_t m_uint16;
-    int16_t  m_sint16;
-    uint8_t  m_uint8;
-    uint8_t  m_sint8;
-    char     m_char; //TODO: delete?
-    float    m_float;
-};
-static_assert(sizeof(SingleValueUnion) == 4, "ValueUnion wrong layout");
-
-
-enum GetValueResult
+template <typename T>
+GetValueResult GetFromNoValue(T& /*a_value*/)
 {
-    DoesNotExists = 0,
-    FailedCast = 1,
-    Ok_WithCast = 2,
-    Ok_NoCast = 3
-};
+    return GetValueResult::FailedCast;
+}
+
+template <>
+inline GetValueResult GetFromNoValue(std::string& a_value)
+{
+    a_value = std::string();
+    return GetValueResult::Ok_NoCast;
+}
+
+}
 
 inline bool GetValueSucceeded(const GetValueResult a_result)
 {
     return (GetValueResult::Ok_WithCast <= a_result);
 }
-
-class SingleValue: public Tag_Value<SingleValueUnion> //TODO: rename to Tag_SingleValue
-{
-public://functions
-    template <typename T>
-    explicit SingleValue(const Tag a_tag, const VRType a_vr, const T a_value)
-        : Tag_Value<SingleValueUnion>(a_tag, a_vr, a_value)
-    {
-        assert(a_vr == VRType::SL ||
-               a_vr == VRType::UL ||
-               a_vr == VRType::OL ||
-               a_vr == VRType::SS ||
-               a_vr == VRType::US ||
-               a_vr == VRType::OW ||
-               a_vr == VRType::FL ||
-               a_vr == VRType::OF ||
-               a_vr == VRType::OB);
-    }
-
-    template <typename T>
-    GetValueResult get(T& a_result) const;
-
-    //template<typename CharT>
-    //GetValueResult get(std::basic_string<CharT>& a_result) const;
-};
-static_assert(sizeof(SingleValue) > 8, "dcm::SingleValue: unexpected memory layout.");
 
 
 template <size_t Size>
@@ -319,7 +253,7 @@ public:
     GetValueResult getTag(const Tag a_tag, T& a_value) const
     {
         if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
-            return details::GetFromNoValue<T>(a_value);
+            return detail::GetFromNoValue<T>(a_value);
 
         GetValueResult res;
         res = m_singleValues.get(a_tag, a_value, m_valuesSorted[ValueBit::Single]);
