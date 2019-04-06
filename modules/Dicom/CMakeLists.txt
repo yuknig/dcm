@@ -7,7 +7,9 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(include)
 
 set (HEADERS 
+             include/Dicom/TagStruct/ArrayValue.h
              include/Dicom/TagStruct/SingleValue.h
+             include/Dicom/TagStruct/SortedTagList.h
              include/Dicom/TagStruct/TagNum.h
              include/Dicom/TagStruct/TagValueBasic.h
              include/Dicom/TagStruct/Vr.h

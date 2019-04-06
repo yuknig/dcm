@@ -2,6 +2,8 @@
 #define _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 
 #include <Dicom/TagStruct/SingleValue.h>
+#include <Dicom/TagStruct/ArrayValue.h>
+#include <Dicom/TagStruct/SortedTagList.h>
 #include <Dicom/Util.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
@@ -38,136 +40,6 @@ inline bool GetValueSucceeded(const GetValueResult a_result)
 {
     return (GetValueResult::Ok_WithCast <= a_result);
 }
-
-
-template <size_t Size>
-class ShortArrayValueT : public Tag_Value<std::array<char, Size>>
-{
-    using Base = Tag_Value<std::array<char, Size>>;
-public:
-    ShortArrayValueT(const Tag a_tag, const VRType a_vr, const size_t a_length_in_bytes, const StreamRead& a_stream)
-        : Base(a_tag, a_vr)
-    {
-        static_assert(Size < 256, "Too big array size");
-
-        const auto length_in_bytes = std::min(a_length_in_bytes, getLengthMax());
-        assert(length_in_bytes == a_length_in_bytes);
-
-        const auto bytes_read = a_stream.readToMemInPlace(Base::m_value.data(), length_in_bytes);
-        if (bytes_read != length_in_bytes)
-        {
-            assert(false);
-        }
-
-        for (size_t i = bytes_read; i < getLengthMax(); ++i)
-            Base::m_value[i] = '\0';
-        Base::m_value[Size - 1] = static_cast<unsigned char>(a_length_in_bytes);
-    }
-
-    size_t getLengthInBytes() const
-    {
-        const size_t result = static_cast<unsigned char>(Base::m_value[Size - 1]);
-        assert(result < getLengthMax());
-        return result;
-    }
-
-    static constexpr size_t getLengthMax()
-    {
-        return Size - 1;
-    }
-
-    template <typename T>
-    GetValueResult get(T& /*a_value*/) const
-    {
-        return GetValueResult::FailedCast;
-    }
-};
-
-using ShortArrayValue = ShortArrayValueT<32>;
-
-class LongArrayValue: public Tag_ValuePtr<std::vector<char>>
-{
-    using Base = Tag_ValuePtr<std::vector<char>>;
-
-public:
-    LongArrayValue(const Tag a_tag, const VRType a_vr, const size_t a_length_in_bytes, const StreamRead& a_stream)
-        : Base(a_tag, a_vr, a_length_in_bytes)
-    {
-        const auto bytes_read = a_stream.readToMemInPlace(m_value_ptr->data(), a_length_in_bytes);
-        if (bytes_read != a_length_in_bytes)
-        {
-            assert(false);
-        }
-    }
-
-    size_t getLengthInBytes() const
-    {
-        return m_value_ptr->size();
-    }
-
-    template <typename T>
-    GetValueResult get(T& /*a_value*/) const
-    {
-        return GetValueResult::FailedCast;
-    }
-};
-
-
-template <typename T, bool Realloc>
-class SortedList_Tag_Base
-{
-public://functions
-    SortedList_Tag_Base()
-    {}
-
-    template <typename... ArgsT>
-    void emplace(bool& a_is_sorted, ArgsT&&... a_args);
-
-    T* begin();
-    T* end();
-
-    bool hasTag(const Tag a_tag, bool a_is_sorted) const;
-
-    void sort();
-
-protected://functions
-    const T* getTagPtr(const Tag a_tag, bool a_is_sorted) const;
-
-    bool areLastTagsSorted() const;
-
-protected://types
-#if INTPTR_MAX == INT32_MAX
-    using SizeType = uint16_t;
-#else
-    using SizeType = uint32_t;
-#endif
-
-protected://data
-    //std::vector<T> m_list;
-    MVector<T, SizeType, Realloc> m_list;
-};
-
-template <typename T, bool Realloc>
-class SortedList_Tag_Value: public SortedList_Tag_Base<T, Realloc>
-{
-public://functions
-    template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
-
-private://types
-    typedef SortedList_Tag_Base<T, Realloc> Base;
-};
-
-template <typename T>
-class SortedList_Tag_ValuePtr: public SortedList_Tag_Base<T, false>
-{
-public://functions
-    template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
-
-private://types
-    typedef SortedList_Tag_Base<T, false> Base;
-};
 
 
 class SingleValues: public SortedList_Tag_Value<SingleValue, true>
