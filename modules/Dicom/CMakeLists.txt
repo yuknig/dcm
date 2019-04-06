@@ -37,23 +37,6 @@ set (SOURCES
              src/Vr.cpp
              src/Stream.cpp)
 
-#Boost
-#set(Boost_USE_STATIC_LIBS ON)
-#set(Boost_USE_MULTITHREADED ON)
-
-#set (Boost_INCLUDE_DIR F:/develop/boost/boost_1_64_0)
-#set (Boost_LIBRARY_DIR F:/develop/boost/boost_1_64_0/stage/lib)
-
-#set (BOOST_COMPONENTS filesystem program_options iostreams timer)
-
-#find_package (Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
-
-#INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
-#INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-
-#message(STATUS "Boost_INCLUDE_DIR    : ${Boost_INCLUDE_DIR}")
-#message(STATUS "Boost_INCLUDE_DIRS   : ${Boost_INCLUDE_DIRS}")
-
 include_directories(PRIVATE ${Boost_INCLUDE_DIRS})
 
 set (LIBRARIES
@@ -64,4 +47,3 @@ add_library(${PROJECT} ${HEADERS} ${SOURCES})
 
 target_link_libraries(${PROJECT} ${LIBRARIES} ${Boost_LIBRARIES})
 #target_include_directories(${PROJECT} PRIVATE ${Boost_INCLUDE_DIRS})
-#target_include_directories(${PROJECT} PRIVATE ${Boost_INCLUDE_DIR})
