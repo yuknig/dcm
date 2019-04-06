@@ -20,7 +20,6 @@ set (HEADERS
              include/Dicom/Util.h
              include/Dicom/Util.inl
              include/Util/CastValue.h
-             include/Util/CastValue.inl
              include/Util/optional.h
              include/Util/Stream.h
              include/Util/Stream.inl
