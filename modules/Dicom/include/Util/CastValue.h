@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <sstream>
+#include <cassert>
 
 enum class CastResult
 {
@@ -171,10 +172,23 @@ inline CastResult CastValue_FromDouble_ToFloat(const FromT& a_from, ToT& a_to) {
 template <typename FromT, typename CharT>
 inline CastResult CastValue_ToString(const FromT& a_from, std::basic_string<CharT>& a_to) {
 
-    std::basic_ostringstream<CharT> wss;
-    wss << a_from;
-    a_to = wss.str();
+    std::basic_ostringstream<CharT> woss;
+    woss.imbue(std::locale::classic());
+    woss << a_from;
+    a_to = woss.str();
     return CastResult::Ok_CastLoseless; //TODO: special enum?
+}
+
+template <typename ToT, typename CharT>
+inline CastResult CastValue_FromString(const std::basic_string<CharT>& a_from, ToT& a_to) {
+    std::basic_istringstream<CharT> wiss(a_from);
+    ToT value;
+    wiss >> a_to;
+    if (wiss.fail())
+        return CastResult::FailedCast;
+
+    a_to = std::move(value);
+    return CastResult::Ok_CastLoseless;
 }
 
 template <typename T>
@@ -253,9 +267,19 @@ CastResult CastValueToString(const FromT& a_from, std::basic_string<CharToT>& a_
     return detail::CastValue_ToString(a_from, a_to);
 }
 
+template <typename ToT, typename CharToT>
+CastResult CastValueFromString(const std::basic_string<CharToT>& a_from, ToT& a_to) {
+    return detail::CastValue_FromString(a_from, a_to);
+}
+
 template <typename FromT, typename CharToT>
 CastResult CastValue(const FromT& a_from, std::basic_string<CharToT>& a_to) {
     return CastValueToString(a_from, a_to);
+}
+
+template <typename ToT, typename CharToT>
+CastResult CastValue(const std::basic_string<CharToT>& a_from, ToT& a_to) {
+    return CastValueFromString(a_from, a_to);
 }
 
 #endif // _CAST_VALUE_2B4B4879_93AE_47A7_881F_FD6A4A5F6544_
