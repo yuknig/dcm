@@ -395,43 +395,55 @@ bool SortedList_Tag_Base<T, Realloc>::hasTag(const Tag a_tag, bool a_is_sorted) 
 }
 
 template <typename T, bool Realloc>
+template <typename V>
+GetValueResult SortedList_Tag_Base<T, Realloc>::get(const Tag a_tag, V& a_result, bool a_is_sorted) const
+{
+    const T* valuePtr = getTagPtr(a_tag, a_is_sorted);
+    if (!valuePtr)
+        return GetValueResult::DoesNotExists;
+    return valuePtr->get(a_result);
+}
+
+
+template <typename T, bool Realloc>
 const T* SortedList_Tag_Base<T, Realloc>::getTagPtr(const Tag a_tag, bool a_is_sorted) const
 {
-    const T* result = nullptr;
     if (a_is_sorted)
-        result = details::findTagBinSearch<T>(m_list, a_tag);
-    else
-        result = details::findTagLinearSearch<T>(m_list, a_tag);
-
-    return result;
+        return details::findTagBinSearch<T>(m_list, a_tag);
+    return details::findTagLinearSearch<T>(m_list, a_tag);
 }
 
 ////////////////////////////////////////
 //SortedList_Tag_Value
 ////////////////////////////////////////
 
-template <typename T, bool Realloc>
-template <typename V>
-GetValueResult SortedList_Tag_Value<T, Realloc>::get(const Tag a_tag, V& a_result, bool a_is_sorted) const
-{
-    const T* valuePtr = Base::getTagPtr(a_tag, a_is_sorted);
-    if (!valuePtr)
-        return GetValueResult::DoesNotExists;
-    return valuePtr->get(a_result);
-}
+
+//template <typename T, bool Realloc>
+//template <typename V>
+//std::shared_ptr<std::vector<V>> SortedList_Tag_Value<T, Realloc>::getVector(const Tag& a_tag, bool a_is_sorted) const
+//{
+//    T value = {};
+//    GetValueResult res = this->get(a_tag, value, a_is_sorted);
+//    if (!Succeeded(res))
+//        return std::make_shared<std::vector<T>>();
+//
+//    return std::make_shared<std::vector<T>>(1, std::move(value));
+//}
 
 ////////////////////////////////////////
 //SortedTagPtrList
 ////////////////////////////////////////
 
+
 template <typename T>
 template <typename V>
-GetValueResult SortedList_Tag_ValuePtr<T>::get(const Tag a_tag, V& a_result, bool a_is_sorted) const
+std::shared_ptr<std::vector<V>> SortedList_Tag_ValuePtr<T>::getVector(const Tag& a_tag, bool a_is_sorted) const
 {
     const T* valuePtr = Base::getTagPtr(a_tag, a_is_sorted);
-    if (!valuePtr)
-        return GetValueResult::DoesNotExists;
-    return (valuePtr)->get(a_result);
+    if (valuePtr)
+        return valuePtr->valueSharedPtr();
+
+    return {};
 }
 
 ////////////////////////////////////////

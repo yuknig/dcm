@@ -298,7 +298,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
     ParserConfig config;
     {
         std::string transfer_syntax;
-        if (GetValueSucceeded(root->getTag(dcm::TransferSyntaxUID, transfer_syntax)))
+        if (Succeeded(root->getTag(dcm::TransferSyntaxUID, transfer_syntax)))
         {
             if (transfer_syntax == "1.2.840.10008.1.2")
                 config.m_explicit = false;

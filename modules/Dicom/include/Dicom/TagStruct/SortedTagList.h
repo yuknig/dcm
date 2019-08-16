@@ -22,6 +22,9 @@ public://functions
 
     bool hasTag(const Tag a_tag, bool a_is_sorted) const;
 
+    template <typename V>
+    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
+
     void sort();
 
 protected://functions
@@ -45,8 +48,11 @@ template <typename T, bool Realloc>
 class SortedList_Tag_Value: public SortedList_Tag_Base<T, Realloc>
 {
 public://functions
-    template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
+    //template <typename V>
+    //GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
+
+    /*template <typename V>
+    std::shared_ptr<std::vector<V>> getVector(const Tag& a_tag, bool a_is_sorted) const;*/
 
 private://types
     typedef SortedList_Tag_Base<T, Realloc> Base;
@@ -56,8 +62,11 @@ template <typename T>
 class SortedList_Tag_ValuePtr: public SortedList_Tag_Base<T, false>
 {
 public://functions
+    //template <typename V>
+    //GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
+
     template <typename V>
-    GetValueResult get(const Tag a_tag, V& a_result, bool a_is_sorted) const;
+    std::shared_ptr<std::vector<V>> getVector(const Tag& a_tag, bool a_is_sorted) const;
 
 private://types
     typedef SortedList_Tag_Base<T, false> Base;

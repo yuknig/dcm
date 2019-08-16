@@ -181,10 +181,10 @@ inline CastResult CastValue_ToString(const FromT& a_from, std::basic_string<Char
 
 template <typename ToT, typename CharT>
 inline CastResult CastValue_FromString(const std::basic_string<CharT>& a_from, ToT& a_to) {
-    std::basic_istringstream<CharT> wiss(a_from);
+    std::basic_istringstream<CharT> iss(a_from);
     ToT value;
-    wiss >> a_to;
-    if (wiss.fail())
+    iss >> value;
+    if (iss.fail())
         return CastResult::FailedCast;
 
     a_to = std::move(value);
@@ -280,6 +280,10 @@ CastResult CastValue(const FromT& a_from, std::basic_string<CharToT>& a_to) {
 template <typename ToT, typename CharToT>
 CastResult CastValue(const std::basic_string<CharToT>& a_from, ToT& a_to) {
     return CastValueFromString(a_from, a_to);
+}
+
+inline bool Succeeded(const CastResult a_result) {
+    return (CastResult::FailedCast != a_result);
 }
 
 #endif // _CAST_VALUE_2B4B4879_93AE_47A7_881F_FD6A4A5F6544_

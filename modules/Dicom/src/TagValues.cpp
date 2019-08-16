@@ -17,32 +17,23 @@ void Group::addSequence(const Tag a_tag, std::vector<std::shared_ptr<Group>> a_g
 
 bool Group::hasTag(const Tag a_tag) const
 {
-    if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
-        return true;
-    if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
-        return true;
-    if (m_shortArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortArray]))
-        return true;
-    if (m_longArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::LongArray]))
-        return true;
-    if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
-        return true;
-    return false;
+    return (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]) ||
+            m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]) ||
+            m_shortArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortArray]) ||
+            m_longArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::LongArray]) ||
+            m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]));
 }
 
 bool Group::hasValue(const Tag a_tag) const
 {
     if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
         return false;
-    if (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]))
-        return true;
-    if (m_shortArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortArray]))
-        return true;
-    if (m_longArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::LongArray]))
-        return true;
-    if (m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]))
-        return true;
-    return false;
+
+    return (m_singleValues.hasTag(a_tag, m_valuesSorted[ValueBit::Single]) ||
+            m_shortArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::ShortArray]) ||
+            m_longArrayValues.hasTag(a_tag, m_valuesSorted[ValueBit::LongArray]) ||
+            m_sequences.hasTag(a_tag, m_valuesSorted[ValueBit::Sequence]));
+
 }
 
 void Group::sort(bool a_recursive)
@@ -58,10 +49,10 @@ void Group::sort(bool a_recursive)
     {
         for (const auto& sequence : m_sequences)
         {
-            const auto& groups = sequence.value();
-            for (const auto& groupPtr : groups)
+            const auto& items = sequence.value();
+            for (const auto& item : items)
             {
-                groupPtr->sort(true);
+                item->sort(true);
             }
         }
     }

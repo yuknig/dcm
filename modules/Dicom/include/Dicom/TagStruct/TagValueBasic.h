@@ -46,7 +46,7 @@ public:
     template <typename... ArgsT>
     Tag_ValuePtr(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuct_args)
         : Tag_NoValue(a_tag, a_vr)
-        , m_value_ptr(std::make_unique<T>(std::forward<ArgsT>(a_constuct_args)...))
+        , m_value_ptr(std::make_shared<T>(std::forward<ArgsT>(a_constuct_args)...))
     {}
 
     const T& value() const {
@@ -54,8 +54,12 @@ public:
         return *m_value_ptr;
     }
 
+    std::shared_ptr<const T> valueSharedPtr() const {
+        return m_value_ptr;
+    }
+
 protected:
-    std::unique_ptr<T> m_value_ptr;
+    std::shared_ptr<T> m_value_ptr;
 };
 
 enum class GetValueResult {

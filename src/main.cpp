@@ -11,7 +11,7 @@
 
 int main()
 {
-    const std::string path = "F:/develop/dicom/files/GEUS/1.2.840.113619.2.239.1234.1407829360.2140.8";
+    const std::string path = "F:/develop/dicom/files/YBR_FULL_422.dcm";
 
     std::shared_ptr<std::vector<uint8_t>> file_data;
     {
@@ -36,8 +36,9 @@ int main()
 
     dcm::Parser parser(*stream);
     auto root = parser.root();
+    //root->getTag()
 
-    stream.reset();
+    //stream.reset();
     file_data.reset();
 
     

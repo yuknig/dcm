@@ -36,7 +36,7 @@ inline GetValueResult GetFromNoValue(std::string& a_value)
 
 }
 
-inline bool GetValueSucceeded(const GetValueResult a_result)
+inline bool Succeeded(const GetValueResult a_result)
 {
     return (GetValueResult::Ok_WithCast <= a_result);
 }
@@ -146,10 +146,29 @@ public:
         return GetValueResult::DoesNotExists;
     }
 
+    template <typename T>
+    std::shared_ptr<std::vector<T>> getTagVector(const Tag a_tag) const
+    {
+        if (m_noValues.hasTag(a_tag, m_valuesSorted[ValueBit::NoValue]))
+            return std::shared_ptr<std::vector<T>>();
+
+        // single value
+        {
+            T value = {};
+            auto getValRes = m_singleValues.get(a_tag, value, m_valuesSorted[ValueBit::Single]);
+            if (Succeeded(getValRes))
+                return std::make_shared<std::vector<T>>(1, std::move(value));
+        }
+
+        // TODO: finish
+
+        return GetValueResult::DoesNotExists;
+    }
+
 public://types
     typedef SortedList_Tag_Value<Tag_NoValue, true>      NoValues;
     typedef SortedList_Tag_Value<ShortArrayValue, true>  ShortArrayValues;
-    typedef SortedList_Tag_Value<LongArrayValue, true>   LongArrayValues;
+    typedef SortedList_Tag_ValuePtr<LongArrayValue>      LongArrayValues;
     typedef SortedList_Tag_ValuePtr<Sequence>            SequenceValues;
 
     enum ValueBit
