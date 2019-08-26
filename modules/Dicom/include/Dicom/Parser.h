@@ -66,12 +66,14 @@ struct ParseGroupDesc
     size_t       m_stream_begin;
     size_t       m_stream_end;
     ParserConfig m_config;
-    Group*       m_dest_group;
+    NewGroup*    m_dest_group;
 };
 
 class Parser
 {
 public://functions
+    using GroupPtr = std::shared_ptr<NewGroup>;
+
     Parser(StreamRead& a_stream, const Tag& a_max_tag = 0xffffffff);
 
     GroupPtr root() const;
@@ -90,7 +92,7 @@ namespace ParseHelper
 {
 
 std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag);
-bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<GroupPtr>& a_groups, std::deque<ParseGroupDesc>& a_items);
+bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::shared_ptr<NewGroup>>& a_groups, std::deque<ParseGroupDesc>& a_items);
 std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile);
 std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile);
 std::optional<Tag> getTag(const StreamRead& a_stream);

@@ -4,6 +4,7 @@
 #include <Dicom/TagStruct/SingleValue.h>
 #include <Dicom/TagStruct/ArrayValue.h>
 #include <Dicom/TagStruct/SortedTagList.h>
+#include <Dicom/TagValues.h>
 #include <Dicom/Util.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
@@ -191,12 +192,18 @@ public://data
     std::bitset<ValueBit::MaxValue + 1> m_valuesSorted;
 };
 
-typedef std::shared_ptr<Group> GroupPtr;
+//typedef std::shared_ptr<NewGroup> GroupPtr;
 
 
 
 class TagValue {
 public:
+    enum class ValueStorage : uint16_t {
+        NoValue = 0,
+        Inplace,
+        Buffer
+    };
+
     // no value ctor
     explicit TagValue(const Tag& a_tag, const VRType& a_vr)
         : m_tag(a_tag)
@@ -225,12 +232,17 @@ public:
         return m_tag;
     }
 
-private:
-    enum class ValueStorage: uint16_t {
-        NoValue = 0,
-        Inplace,
-        Buffer
-    };
+    const SingleValueUnion& GetValue() const {
+        return m_value;
+    }
+
+    VRType GetVR() const {
+        return m_vr;
+    }
+
+    ValueStorage GetStorage() const {
+        return m_storage;
+    }
 
 private:
     Tag m_tag;
@@ -239,13 +251,14 @@ private:
     VRType m_vr;
 };
 
+template <typename TagT>
 class TagVector {
 public:
     template <typename... ArgsT>
     void emplace(ArgsT&&... a_args) {
         m_tags.emplace_back(std::forward<ArgsT>(a_args)...);
         if (m_sorted && m_tags.size() > 1) // check that vector is still sorted
-            m_sorted = m_tags[m_tags.size() - 2].tag() < m_tags.back().tag()
+            m_sorted = m_tags[m_tags.size() - 2].tag() < m_tags.back().tag();
     }
 
     bool HasTag(const Tag& a_tag) const {
@@ -259,11 +272,12 @@ public:
         });
     }
 
-private:
     const TagValue* GetTagPtr(const Tag& a_tag) const {
         return m_sorted ? GetTagPtr_Sorted(a_tag)
-                        : GetTagPtr_Unsorted(a_tag);
+            : GetTagPtr_Unsorted(a_tag);
     }
+
+private:
 
     const TagValue* GetTagPtr_Sorted(const Tag& a_tag) const {
         assert(m_sorted);
@@ -287,9 +301,11 @@ private:
     }
 
 private:
-    std::vector<TagValue> m_tags;
+    std::vector<TagT> m_tags;
     bool m_sorted = true;
 };
+
+class NewSequence;
 
 class NewGroup {
 public:
@@ -305,6 +321,36 @@ public:
             m_tags.emplace(a_tag, a_vr, SingleValueUnion(a_stream.read<T>()));
         else
             m_tags.emplace(a_tag, a_vr); // no value
+    }
+
+    template <>
+    void AddTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream) {
+        const auto offset = LoadDataToBuf(a_stream, a_valueElements * sizeof(double));
+        if (offset.has_value())
+            m_tags.emplace(a_tag, a_vr, *offset);
+    }
+
+    void AddSequence(const Tag a_tag, std::vector<std::shared_ptr<NewGroup>> a_groups) {
+        //TODO: implement
+    }
+
+    bool HasTag(const Tag a_tag) const {
+        return m_tags.HasTag(a_tag);
+    }
+
+    template <typename T>
+    GetValueResult GetTag(const Tag a_tag, T& a_value) const {
+        const TagValue* tag_ptr = m_tags.GetTagPtr(a_tag);
+        if (!tag_ptr || tag_ptr->GetStorage() == TagValue::ValueStorage::NoValue)
+            return GetValueResult::DoesNotExists;
+
+        CastResult res = GetAndCastValue(*tag_ptr, a_value);
+        return CastResult_To_GetValueResult(res);
+    }
+
+    void OnLoadingFinished() {
+        m_tags.Sort();
+        //TODO: shrink to fit
     }
 
 private:
@@ -333,20 +379,79 @@ private:
         return static_cast<uint32_t>(elms_old);
     }
 
-    bool HasTag(const Tag a_tag) const {
-        return m_tags.HasTag(a_tag);
-    }
+    template <typename ToT>
+    CastResult GetAndCastValue(const TagValue& a_desc, ToT& a_result) const {
+        auto val_dsc = a_desc.GetValue();
+        const void* buf_ptr = nullptr;
+        uint32_t buf_size = 0;
+        {
+            const auto storage = a_desc.GetStorage();
 
-    template <typename T>
-    GetValueResult getTag(const Tag a_tag, T& a_value) const {
-        const auto tag_ptr = m_tags.GetTagPtr(a_tag);
-        if (!tag_ptr)
-            return GetValueResult::DoesNotExists;
+            if (storage == TagValue::ValueStorage::Inplace) {
+                buf_ptr = &val_dsc;
+                buf_size = 4;
+            }
+            else {
+                auto offset = val_dsc.m_sint32;
+                assert(offset < m_data_buf.size());
+                buf_ptr = static_cast<const void*>(m_data_buf.data() + offset);
+                buf_size = *ptrCast<uint32_t>(buf_ptr);
+                buf_ptr = ptrCast<char>(buf_ptr) + 4;
+            }
+        }
+
+        const VRType vr = a_desc.GetVR();
+
+        if (isStringVr(vr)) {
+            //TODO: handle wide chars
+            //TODO: separate char and potential wchar_t VRs
+            return CastValueFromString(std::string(ptrCast<char>(buf_ptr), buf_size), a_result);
+        }
+
+        switch (vr) {
+        case VRType::SL:
+            return CastValue<int32_t>(*static_cast<const int32_t*>(buf_ptr), a_result);
+        case VRType::UL:
+        case VRType::OL:
+            return CastValue<uint32_t>(*static_cast<const uint32_t*>(buf_ptr), a_result);
+        case VRType::SS:
+            return CastValue<int16_t>(*static_cast<const int16_t*>(buf_ptr), a_result);
+        case VRType::US:
+        case VRType::OW:
+            return CastValue<uint16_t>(*static_cast<const uint32_t*>(buf_ptr), a_result);
+        case VRType::OB:
+            return CastValue<uint8_t>(*static_cast<const uint8_t*>(buf_ptr), a_result);
+        case VRType::FL:
+        case VRType::OF:
+            return CastValue<float>(*static_cast<const float*>(buf_ptr), a_result);
+        case VRType::FD:
+        case VRType::OD:
+            return CastValue<double>(*static_cast<const double*>(buf_ptr), a_result);
+        default:
+            assert(false);
+            return CastResult::FailedCast;
+        }
     }
 
 private:
-    TagVector m_tags;
+    TagVector<TagValue> m_tags;
     std::vector<uint32_t> m_data_buf;
+    std::vector<NewSequence> m_sequences;
+};
+
+class NewSequence {
+public:
+    using Item = NewGroup;
+    using ItemPtr = std::unique_ptr<Item>;
+
+    NewSequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
+        : m_tag(a_tag)
+        , m_items(std::move(a_items))
+    {}
+
+private:
+    Tag m_tag;
+    std::vector<ItemPtr> m_items;
 };
 
 class Sequence: public Tag_ValuePtr<std::vector<std::shared_ptr<Group>>>

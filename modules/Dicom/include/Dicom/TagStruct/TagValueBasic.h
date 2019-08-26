@@ -63,7 +63,7 @@ protected:
 };
 
 enum class GetValueResult {
-    DoesNotExists = 0,
+    DoesNotExists = 0, // fix to DoesNotExist
     FailedCast,
     Ok_WithCast,
     Ok_NoCast
