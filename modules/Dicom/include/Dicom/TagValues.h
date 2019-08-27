@@ -6,6 +6,7 @@
 #include <Dicom/TagStruct/SortedTagList.h>
 #include <Dicom/TagValues.h>
 #include <Dicom/Util.h>
+#include <Util/buffer_view.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
 #include "Util/optional.h"
@@ -379,54 +380,53 @@ private:
         return static_cast<uint32_t>(elms_old);
     }
 
+    buffer_view<uint8_t> GetValueBuffer(const TagValue& a_desc) const {
+        const auto& val_dsc = a_desc.GetValue();
+
+        const auto storage = a_desc.GetStorage();
+        if (storage == TagValue::ValueStorage::Inplace)
+            return { ptrCast<uint8_t>(&val_dsc), sizeof(SingleValueUnion) };
+
+        auto offset = val_dsc.m_uint32;
+        assert(offset < m_data_buf.size());
+        const auto* buf_ptr = ptrCast<uint8_t>(m_data_buf.data() + offset);
+        auto buf_size = *ptrCast<uint32_t>(buf_ptr);
+        buf_ptr += sizeof(uint32_t);
+        return { buf_ptr, buf_size };
+    }
+
     template <typename ToT>
     CastResult GetAndCastValue(const TagValue& a_desc, ToT& a_result) const {
-        auto val_dsc = a_desc.GetValue();
-        const void* buf_ptr = nullptr;
-        uint32_t buf_size = 0;
-        {
-            const auto storage = a_desc.GetStorage();
 
-            if (storage == TagValue::ValueStorage::Inplace) {
-                buf_ptr = &val_dsc;
-                buf_size = 4;
-            }
-            else {
-                auto offset = val_dsc.m_sint32;
-                assert(offset < m_data_buf.size());
-                buf_ptr = static_cast<const void*>(m_data_buf.data() + offset);
-                buf_size = *ptrCast<uint32_t>(buf_ptr);
-                buf_ptr = ptrCast<char>(buf_ptr) + 4;
-            }
-        }
+        auto data = GetValueBuffer(a_desc);
 
         const VRType vr = a_desc.GetVR();
 
         if (isStringVr(vr)) {
             //TODO: handle wide chars
             //TODO: separate char and potential wchar_t VRs
-            return CastValueFromString(std::string(ptrCast<char>(buf_ptr), buf_size), a_result);
+            return CastValueFromString(std::string(ptrCast<char>(data.begin()), data.size()), a_result);
         }
 
         switch (vr) {
         case VRType::SL:
-            return CastValue<int32_t>(*static_cast<const int32_t*>(buf_ptr), a_result);
+            return CastValue<int32_t>(*ptrCast<int32_t>(data.begin()), a_result);
         case VRType::UL:
         case VRType::OL:
-            return CastValue<uint32_t>(*static_cast<const uint32_t*>(buf_ptr), a_result);
+            return CastValue<uint32_t>(*ptrCast<uint32_t>(data.begin()), a_result);
         case VRType::SS:
-            return CastValue<int16_t>(*static_cast<const int16_t*>(buf_ptr), a_result);
+            return CastValue<int16_t>(*ptrCast<int16_t>(data.begin()), a_result);
         case VRType::US:
         case VRType::OW:
-            return CastValue<uint16_t>(*static_cast<const uint32_t*>(buf_ptr), a_result);
+            return CastValue<uint16_t>(*ptrCast<int16_t>(data.begin()), a_result);
         case VRType::OB:
-            return CastValue<uint8_t>(*static_cast<const uint8_t*>(buf_ptr), a_result);
+            return CastValue<uint8_t>(*ptrCast<uint8_t>(data.begin()), a_result);
         case VRType::FL:
         case VRType::OF:
-            return CastValue<float>(*static_cast<const float*>(buf_ptr), a_result);
+            return CastValue<float>(*ptrCast<float>(data.begin()), a_result);
         case VRType::FD:
         case VRType::OD:
-            return CastValue<double>(*static_cast<const double*>(buf_ptr), a_result);
+            return CastValue<double>(*ptrCast<double>(data.begin()), a_result);
         default:
             assert(false);
             return CastResult::FailedCast;
