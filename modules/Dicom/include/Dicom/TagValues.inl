@@ -446,14 +446,4 @@ std::shared_ptr<std::vector<V>> SortedList_Tag_ValuePtr<T>::getVector(const Tag&
     return {};
 }
 
-////////////////////////////////////////
-// Group
-////////////////////////////////////////
-
-template <>
-inline void Group::addTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream)
-{
-    assert(false); //TODO: implement
-}
-
 }//namespace dcm
