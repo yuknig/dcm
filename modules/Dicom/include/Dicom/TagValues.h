@@ -183,7 +183,23 @@ private:
     bool m_sorted = true;
 };
 
-class NewSequence;
+class NewGroup;
+
+class NewSequence {
+public:
+    using Item = NewGroup;
+    using ItemPtr = std::unique_ptr<Item>;
+
+    NewSequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
+        : m_tag(a_tag)
+        , m_items(std::move(a_items))
+    {}
+
+private:
+    Tag m_tag;
+    std::vector<ItemPtr> m_items;
+};
+
 
 class NewGroup {
 public:
@@ -208,7 +224,10 @@ public:
             m_tags.emplace(a_tag, a_vr, *offset);
     }
 
-    void AddSequence(const Tag a_tag, std::vector<std::shared_ptr<NewGroup>> a_groups) {
+    void AddSequence(const Tag a_tag, std::vector<std::unique_ptr<NewGroup>> a_groups) {
+        auto offset = static_cast<uint32_t>(m_sequences.size());
+        m_tags.emplace(a_tag, VRType::SQ, offset);
+        m_sequences.emplace_back(a_tag, std::move(a_groups));
         //TODO: implement
     }
 
@@ -315,22 +334,6 @@ private:
     std::vector<uint32_t> m_data_buf;
     std::vector<NewSequence> m_sequences;
 };
-
-class NewSequence {
-public:
-    using Item = NewGroup;
-    using ItemPtr = std::unique_ptr<Item>;
-
-    NewSequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
-        : m_tag(a_tag)
-        , m_items(std::move(a_items))
-    {}
-
-private:
-    Tag m_tag;
-    std::vector<ItemPtr> m_items;
-};
-
 
 }//namespace dcm
 
