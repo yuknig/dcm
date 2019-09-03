@@ -1,6 +1,7 @@
 #include <Dicom/Parser.h>
 #include <Dicom/Util.h>
 #include <Dicom/dict.h>
+#include <Util/string_util.h>
 
 #include <array>
 #include <deque>
@@ -300,6 +301,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
         std::string transfer_syntax;
         if (Succeeded(root->GetTag(dcm::TransferSyntaxUID, transfer_syntax)))
         {
+            transfer_syntax = string_util::TrimRight(transfer_syntax, " \0");
             if (transfer_syntax == "1.2.840.10008.1.2") //TODO: make named consexpr
                 config.m_explicit = false;
         }
