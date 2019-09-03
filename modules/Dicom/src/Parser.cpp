@@ -362,7 +362,7 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
     auto tag_offset = group.m_stream_begin;
     Tag tagNum(0);
 
-    while (tag_offset < group.m_stream_end && tagNum < a_max_tag)
+    while (tag_offset < group.m_stream_end)
     {
         a_stream.seek(tag_offset);
         const auto tag_desc = ParseHelper::getTagDesc(a_stream, group.m_config.IsExplicit());
@@ -373,6 +373,8 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
         }
 
         tagNum = tag_desc->m_tag;
+        if (a_max_tag < tagNum)
+            break;
         const auto value_offset = tag_offset + tag_desc->m_valueOffset;
 
         if (VRType::SQ == tag_desc->m_vr)
