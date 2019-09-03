@@ -7,20 +7,33 @@
 
 namespace string_util {
 
-inline std::string TrimLeft(std::string str) {
-    auto start = std::find_if_not(str.begin(), str.end(), std::isspace);
+template <size_t TrimCharsLen>
+std::string TrimLeft(std::string str, const char(&trimChars)[TrimCharsLen]) {
+    auto start = std::find_if_not(str.begin(), str.end(),
+        [&](const char ch) {
+        auto* begin = trimChars;
+        auto* end   = trimChars + TrimCharsLen;
+        return end != std::find(begin, end, ch);
+    });
     str.erase(str.begin(), start);
     return str;
 }
 
-inline std::string TrimRight(std::string str) {
-    auto end = std::find_if_not(str.rbegin(), str.rend(), std::isspace);
+template <size_t TrimCharsLen>
+std::string TrimRight(std::string str, const char(&trimChars)[TrimCharsLen]) {
+    auto end = std::find_if_not(str.rbegin(), str.rend(),
+        [&](const char ch) {
+        auto* begin = trimChars;
+        auto* end = trimChars + TrimCharsLen;
+        return end != std::find(begin, end, ch);
+    });
     str.erase(end.base(), str.end());
     return str;
 }
 
-inline std::string Strip(std::string str) {
-    return TrimLeft(TrimRight(std::move(str)));
+template <size_t TrimCharsLen>
+inline std::string Strip(std::string str, const char(&trimChars)[TrimCharsLen]) {
+    return TrimLeft(TrimRight(std::move(str), trimChars), trimChars);
 }
 
 template <typename T>
