@@ -6,9 +6,11 @@ class tag_def:
         if len(columns) < 5:
             raise Exception('missing columns')
         self.group_num, self.elm_num, __, __ = self.parse_tag_num(columns[0])
-        self.vr_str = self.parse_vr(columns[3])
+        self.vrs = self.parse_vr(columns[3])
         self.keyword = columns[2]
         self.name = columns[1]
+        if (not self.keyword or not self.name):
+            raise Exception('invalid keyword or name')
 
     #parse tag number given in format: '(XXXX,YYYY)'
     def parse_tag_num(self, str):
@@ -34,26 +36,28 @@ class tag_def:
 
     def parse_vr(self, str):
         vr_list = ['AE', 'AS', 'AT', 'CS', 'DA', 'DS', 'DT', 'FL', 'FD', 'IS', 'LO', 'LT', 'OB', 'OD', 'OF', 'OL', 'OW', 'PN', 'SH', 'SL', 'SQ', 'SS', 'ST', 'TM', 'UC', 'UI', 'UL', 'UN', 'UR', 'US', 'UT']
-        result = ''
+        result = []
         tokens = str.upper().split(' ')
         for token in tokens:
             if (token == 'OR'):
                 continue
             if token not in vr_list:
-                raise Exception('unknown VR')
-            if (len(result) > 0):
-                result += '|'
-            result += token
+                raise Exception('unknown VR:' + token)
+            result.append(token)
         return result
 
 def download_xml_dict(num_attempts):
     for _ in range(num_attempts):
         try:
-            print('Downloading dictionary...')
-            #response = urllib2.urlopen('http://dicom.nema.org/medical/dicom/current/source/docbook/part06/part06.xml')
-            #xml_content = response.read()
-            with open('F:/develop/part06.xml') as f:
-                xml_content = f.read()
+            print('Acquiring dictionary...')
+            # loading from nema website
+            response = urllib2.urlopen('http://dicom.nema.org/medical/dicom/current/source/docbook/part06/part06.xml')
+            xml_content = response.read()
+
+            # loading from local file
+            #with open('F:/develop/part06.xml') as f:
+            #    xml_content = f.read()
+
             print('Parsing file...')
             result = ET.fromstring(xml_content)
             return result
@@ -68,7 +72,9 @@ if __name__ == '__main__':
     print('Processing...')
     nsps = {'ns' : 'http://docbook.org/ns/docbook'} #namespaces
     items = root.findall('ns:chapter/ns:table/ns:tbody/ns:tr', nsps)
-    dict = []
+
+    tags = []
+    vr_set = set()
     for item in items:
         if len(item._children) < 5:
             continue
@@ -88,19 +94,79 @@ if __name__ == '__main__':
 
         try:
             item = tag_def(text_in_cols)
-            dict.append(item)
+            tags.append(item)
+            vrs = '_'.join(item.vrs)
+            if (vrs not in vr_set):
+                vr_set.add(vrs)
         except Exception as e:
             print('failed to parse tag ', text_in_cols, ':', e)
             continue
 
-    dict.sort(key = lambda x: (x.group_num, x.elm_num))
+    tags.sort(key = lambda x: (x.group_num, x.elm_num))
 
-    print('Dictionary:')
+    print('generated file:')
+    print('\n//file generated automatically by dict_gen.py script')
+    print('#pragma once')
+    print('#include <Dicom/TagStruct/Vr.h>')
+    print('')
+    print('namespace dcm')
+    print('{')
+    print('')
+    print('namespace dict')
+    print('{')
 
-    for tag in dict:
-        tag_str = 'TagDef(0x{0:04x},0x{1:04x}, {2})'.format(tag.group_num, tag.elm_num, tag.keyword);
+    print('')
+    print('///////////////////')
+    print('// tags definitions')
+    print('///////////////////')
+    max_keyword_len = max(len(x.keyword) for x in tags)
+    max_name_len = max(len(x.name) for x in tags)
+    for tag in tags:
+        tag_str = 'static const unsigned int {0:<{1}} = 0x{2:04x}{3:04x};'.format(tag.keyword, max_keyword_len, tag.group_num, tag.elm_num)
         print(tag_str)
 
-    for tag in dict:
-        tag_str = '{{ {0}, {1}, "{2}" }},'.format(tag.keyword, tag.vr_str, tag.name);
+    print('')
+    print('')
+    print('///////////////////')
+    print('// used VRs')
+    print('///////////////////')
+    print('namespace tag_vr')
+    print('{\n')
+    vr_list = list(vr_set)
+    vr_list.sort()
+
+    max_vr_len = max(len(x) for x in vr_list)
+    for vr in vr_list:
+        vr_str = ''
+        for token in vr.split('_'):
+            vr_str += 'VRType::' + token + ', '
+        vr_str += 'VRType::Undefined'
+        vr_str = 'static const VRType {0:<{1}}[] = {{ {2} }};'.format(vr, max_vr_len, vr_str)
+        print(vr_str)
+    print('\n} // namespace tag_vr')
+
+    print('')
+    print('')
+    print('///////////////////')
+    print('// dictionary')
+    print('///////////////////')
+
+    print('struct TagDictItem')
+    print('{')
+    print('    unsigned int  m_number;')
+    print('    const VRType* m_vr;')
+    print('    const char*   m_name;')
+    print('    unsigned int  m_vm; //TODO: implement value multiplicity')
+    print('};')
+    print('')
+
+    print('static const TagDictItem TagDictionary[{}] = '.format(len(tags)))
+    print('{')
+    for tag in tags:
+        tag_str = '    {{ {0:<{1}} tag_vr::{2:<{3}} {4:<{5}} 0 }},'.format(tag.keyword+',', max_keyword_len+1, '_'.join(tag.vrs)+',', max_vr_len+1, '"'+tag.name+'",', max_name_len+3)
         print(tag_str)
+    print('};')
+    print('')
+    print('} // namespace dict')
+    print('')
+    print('} // namespace dcm')
