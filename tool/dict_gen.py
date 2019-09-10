@@ -153,13 +153,21 @@ if __name__ == '__main__':
 
     print('struct TagDictItem')
     print('{')
+    print('    TagDictItem(unsigned int a_number, const VRType* a_vr, const char* a_name, unsigned int a_vm)')
+    print('        : m_number(a_number)')
+    print('        , m_vm(a_vm)')
+    print('        , m_vr(a_vr)')
+    print('        , m_name(a_name)')
+    print('    {}')
+    print('')
     print('    unsigned int  m_number;')
+    print('    unsigned int  m_vm = 0;')
     print('    const VRType* m_vr;')
     print('    const char*   m_name;')
-    print('    unsigned int  m_vm; //TODO: implement value multiplicity')
     print('};')
     print('')
 
+    print('// TODO: implement parsing of ValueMultiplicity')
     print('static const TagDictItem TagDictionary[{}] = '.format(len(tags)))
     print('{')
     for tag in tags:
