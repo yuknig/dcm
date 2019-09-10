@@ -16,7 +16,6 @@ set (HEADERS
              include/Dicom/Parser.h
              include/Dicom/TagValues.h
              include/Dicom/TagValues.inl
-             include/Dicom/Tags.h
              include/Dicom/Util.h
              include/Dicom/Util.inl
              include/Util/buffer_view.h
@@ -34,6 +33,7 @@ set (SOURCES
              src/TagNum.cpp
              src/TagValueBasic.cpp
              src/Parser.cpp
+             src/dict.cpp
              src/TagValues.cpp
              src/Vr.cpp
              src/Stream.cpp)
