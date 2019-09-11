@@ -299,7 +299,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
     ParserConfig config = {};
     {
         std::string transfer_syntax;
-        if (Succeeded(root->GetTag(dcm::TransferSyntaxUID, transfer_syntax)))
+        if (Succeeded(root->GetTag(dcm::dict::TransferSyntaxUID, transfer_syntax)))
         {
             transfer_syntax = string_util::TrimRight(transfer_syntax, " \0");
             if (transfer_syntax == "1.2.840.10008.1.2") //TODO: make named consexpr
@@ -543,6 +543,10 @@ std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, co
         const VRCode vrCode = static_cast<VRCode>(vr);
         vrType = vrCodeToVrType(vrCode);
         assert(VRType::Undefined != vrType);
+    }
+    else
+    {
+        vrType = dict::GetTagVR(*tag);
     }
     return std::make_pair(*tag, vrType);
 }
