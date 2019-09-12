@@ -377,9 +377,9 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
 
         if (VRType::SQ == tag_desc->m_vr)
         {
-            std::vector<std::unique_ptr<NewGroup>> sequence_groups;
-            if (ParseSequence(a_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_groups, a_groupQueue))
-                group.m_dest_group->AddSequence(tagNum, std::move(sequence_groups));
+            std::vector<std::unique_ptr<NewGroup>> sequence_items;
+            if (ParseSequence(a_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_items, a_groupQueue))
+                group.m_dest_group->AddSequence(tagNum, std::move(sequence_items));
             else
             {
                 assert(false);
@@ -402,11 +402,11 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
     return tag_offset;
 }
 
-bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<NewGroup>>& a_groups, std::deque<ParseGroupDesc>& a_items)
+bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<NewGroup>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse)
 {
     auto tag_offset = a_begin_offset;
 
-    std::vector<std::unique_ptr<NewGroup>> groups;
+    std::vector<std::unique_ptr<NewGroup>> items;
 
     while (tag_offset < a_end_offset)
     {
@@ -425,17 +425,17 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
         const auto value_offset = tag_offset + tag_desc->m_valueOffset;
 
         auto item = std::make_unique<NewGroup>();
-        a_items.emplace_back(ParseGroupDesc{ value_offset,
+        a_items_to_parse.emplace_back(ParseGroupDesc{ value_offset,
                                              value_offset + tag_desc->m_valueLength,
                                              a_config,
                                              item.get() });
-        groups.emplace_back(std::move(item));
+        items.emplace_back(std::move(item));
 
         tag_offset += tag_desc->m_fullLength;
     }
     assert(tag_offset == a_end_offset);
 
-    a_groups.swap(groups);
+    a_items.swap(items);
     return true;
 }
 
