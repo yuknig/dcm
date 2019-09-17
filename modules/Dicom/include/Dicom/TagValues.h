@@ -150,6 +150,10 @@ public:
         });
     }
 
+    void ShrinkToFit() {
+        m_tags.shrink_to_fit();
+    }
+
     const TagValue* GetTagPtr(const Tag& a_tag) const {
         return m_sorted ? GetTagPtr_Sorted(a_tag)
             : GetTagPtr_Unsorted(a_tag);
@@ -189,15 +193,24 @@ class NewSequence {
 public:
     using Item = NewGroup;
     using ItemPtr = std::unique_ptr<Item>;
+    using ItemPtrContainer = std::vector<ItemPtr>;
 
     NewSequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
         : m_tag(a_tag)
         , m_items(std::move(a_items))
     {}
 
+    ItemPtrContainer::iterator begin() {
+        return m_items.begin();
+    }
+
+    ItemPtrContainer::iterator end() {
+        return m_items.end();
+    }
+
 private:
     Tag m_tag;
-    std::vector<ItemPtr> m_items;
+    ItemPtrContainer m_items;
 };
 
 
@@ -247,6 +260,11 @@ public:
 
     void OnLoadingFinished() {
         m_tags.Sort();
+        m_tags.ShrinkToFit();
+        for (auto& sq : m_sequences) {
+            for(auto& sq_item : sq)
+                sq_item->OnLoadingFinished();
+        }
         //TODO: shrink to fit
     }
 
