@@ -1,6 +1,5 @@
 #include <Dicom/TagStruct/TagNum.h>
 
-#include <tuple>
 #include <cassert>
 
 namespace dcm
@@ -16,13 +15,18 @@ TagNum::TagNum(const uint16_t a_groupNum, const uint16_t a_elementNum)
 {}
 
 bool TagNum::operator<(const TagNum& a_rhs) const {
-    return std::tie(m_groupNum, m_elementNum) < std::tie(a_rhs.m_groupNum, a_rhs.m_elementNum);
+    if (m_groupNum < a_rhs.m_groupNum)
+        return true;
+
+    if (m_groupNum > a_rhs.m_groupNum)
+        return false;
+
+    return (m_elementNum < a_rhs.m_elementNum);
 }
 
 bool TagNum::operator==(const TagNum& a_rhs) const {
-    const bool result = (this->m_groupNum   == a_rhs.m_groupNum &&
-                         this->m_elementNum == a_rhs.m_elementNum);
-    return result;
+    return (this->m_groupNum   == a_rhs.m_groupNum &&
+            this->m_elementNum == a_rhs.m_elementNum);
 }
 
 bool TagNum::operator!=(const TagNum& a_rhs) const {
