@@ -10,58 +10,6 @@
 namespace dcm
 {
 
-class Tag_NoValue {
-public:
-    Tag_NoValue(const Tag a_tag, const VRType a_vr);
-
-    Tag tag() const;
-    VRType vr() const;
-    bool operator<(const Tag_NoValue& a_rhs) const;
-
-protected:
-    Tag    m_tag;
-    VRType m_vr;
-};
-
-template <typename T>
-class Tag_Value: public Tag_NoValue {
-public:
-    template <typename... ArgsT>
-    Tag_Value(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuct_args)
-        : Tag_NoValue(a_tag, a_vr)
-        , m_value(std::forward<ArgsT>(a_constuct_args)...)
-    {}
-
-    const T& value() const {
-        return m_value;
-    }
-
-protected:
-    T m_value;
-};
-
-template <typename T>
-class Tag_ValuePtr: public Tag_NoValue {
-public:
-    template <typename... ArgsT>
-    Tag_ValuePtr(const Tag a_tag, const VRType a_vr, ArgsT&&... a_constuct_args)
-        : Tag_NoValue(a_tag, a_vr)
-        , m_value_ptr(std::make_shared<T>(std::forward<ArgsT>(a_constuct_args)...))
-    {}
-
-    const T& value() const {
-        assert(m_value_ptr);
-        return *m_value_ptr;
-    }
-
-    std::shared_ptr<const T> valueSharedPtr() const {
-        return m_value_ptr;
-    }
-
-protected:
-    std::shared_ptr<T> m_value_ptr;
-};
-
 enum class GetValueResult {
     DoesNotExists = 0, // fix to DoesNotExist
     FailedCast,

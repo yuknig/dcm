@@ -2,8 +2,6 @@
 #define _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 
 #include <Dicom/TagStruct/SingleValue.h>
-#include <Dicom/TagStruct/ArrayValue.h>
-#include <Dicom/TagStruct/SortedTagList.h>
 #include <Dicom/TagValues.h>
 #include <Dicom/Util.h>
 #include <Util/buffer_view.h>
@@ -37,41 +35,12 @@ inline GetValueResult GetFromNoValue(std::string& a_value)
     return GetValueResult::Ok_NoCast;
 }
 
-}
+} // namespace detail
 
 inline bool Succeeded(const GetValueResult a_result)
 {
     return (GetValueResult::Ok_WithCast <= a_result);
 }
-
-
-class SingleValues: public SortedList_Tag_Value<SingleValue, true>
-{
-    using Base = SortedList_Tag_Value<SingleValue, true>;
-public://functions
-    SingleValues()
-    {}
-
-    template <typename T>
-    void add(bool& a_is_sorted, const Tag a_tag, const VRType a_vr, const T& a_value)
-    {
-        static_assert(std::is_same_v<T, uint32_t> ||
-                      std::is_same_v<T, int32_t>  ||
-                      std::is_same_v<T, uint16_t> ||
-                      std::is_same_v<T, int16_t>  ||
-                      std::is_same_v<T, uint8_t>  ||
-                      std::is_same_v<T, uint8_t>  ||
-                      std::is_same_v<T, char>     ||
-                      std::is_same_v<T, float>, "Wrong Type");
-
-        Base::emplace(a_is_sorted, a_tag, a_vr, a_value);
-    }
-};
-
-
-
-//typedef std::shared_ptr<NewGroup> GroupPtr;
-
 
 
 class TagValue {
@@ -354,7 +323,5 @@ private:
 };
 
 }//namespace dcm
-
-#include <Dicom/TagValues.inl>
 
 #endif //_TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
