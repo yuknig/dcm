@@ -199,13 +199,6 @@ public:
             m_tags.emplace(a_tag, a_vr); // no value
     }
 
-    template <>
-    void AddTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream) {
-        const auto offset = LoadDataToBuf(a_stream, a_valueElements * sizeof(double));
-        if (offset.has_value())
-            m_tags.emplace(a_tag, a_vr, *offset);
-    }
-
     void AddSequence(const Tag a_tag, std::vector<std::unique_ptr<NewGroup>> a_groups) {
         auto offset = static_cast<uint32_t>(m_sequences.size());
         m_tags.emplace(a_tag, VRType::SQ, offset);
@@ -321,6 +314,13 @@ private:
     std::vector<uint32_t> m_data_buf;
     std::vector<NewSequence> m_sequences;
 };
+
+template <>
+inline void NewGroup::AddTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream) {
+    const auto offset = LoadDataToBuf(a_stream, a_valueElements * sizeof(double));
+    if (offset.has_value())
+        m_tags.emplace(a_tag, a_vr, *offset);
+}
 
 }//namespace dcm
 
