@@ -1,8 +1,7 @@
 #ifndef _SINGLE_VALUE_48AD71D4_AD7F_4CF6_933F_2FE8E60243BC_
 #define _SINGLE_VALUE_48AD71D4_AD7F_4CF6_933F_2FE8E60243BC_
 
-//#include <cstdint>
-#include <Dicom/TagStruct/TagValueBasic.h>
+#include <cstdint>
 
 namespace dcm
 {

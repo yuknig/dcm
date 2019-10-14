@@ -1,6 +1,8 @@
 #ifndef _BUFFER_VIEW_6F6DAAD8_EB09_4B88_9C7E_C40BAECD60B1_
 #define _BUFFER_VIEW_6F6DAAD8_EB09_4B88_9C7E_C40BAECD60B1_
 
+#include <cassert>
+
 template <typename T>
 class buffer_view {
 public:

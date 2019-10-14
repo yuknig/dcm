@@ -9,7 +9,6 @@ include_directories(include)
 set (HEADERS 
              include/Dicom/TagStruct/SingleValue.h
              include/Dicom/TagStruct/TagNum.h
-             include/Dicom/TagStruct/TagValueBasic.h
              include/Dicom/TagStruct/Vr.h
              include/Dicom/dict.h
              include/Dicom/Parser.h

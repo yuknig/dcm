@@ -2,12 +2,14 @@
 #define _TAG_VALUES_6E3840DA_ADC7_47BF_843A_7ABDA93A5263_
 
 #include <Dicom/TagStruct/SingleValue.h>
-#include <Dicom/TagValues.h>
+#include <Dicom/TagStruct/TagNum.h>
+#include <Dicom/TagStruct/Vr.h>
 #include <Dicom/Util.h>
 #include <Util/buffer_view.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
 #include "Util/optional.h"
+#include "Util/CastValue.h" //TODO: harmonize style of includes
 
 #include <vector>
 #include <bitset>
@@ -19,6 +21,31 @@
 
 namespace dcm
 {
+
+enum class GetValueResult {
+    DoesNotExists = 0, // fix to DoesNotExist
+    FailedCast,
+    Ok_WithCast,
+    Ok_NoCast
+};
+
+inline bool Succeeded(const GetValueResult a_result) {
+    return (GetValueResult::Ok_WithCast <= a_result);
+}
+
+inline GetValueResult CastResult_To_GetValueResult(const CastResult& a_from) {
+    switch (a_from) {
+    case CastResult::Ok_NoCast:
+        return GetValueResult::Ok_NoCast;
+    case CastResult::Ok_CastLoseless:
+    case CastResult::Ok_CastLossy:
+        return GetValueResult::Ok_WithCast;
+    case CastResult::FailedCast:
+    default:
+        return GetValueResult::FailedCast;
+    }
+}
+
 
 namespace detail
 {
@@ -36,11 +63,6 @@ inline GetValueResult GetFromNoValue(std::string& a_value)
 }
 
 } // namespace detail
-
-inline bool Succeeded(const GetValueResult a_result)
-{
-    return (GetValueResult::Ok_WithCast <= a_result);
-}
 
 
 class TagValue {
