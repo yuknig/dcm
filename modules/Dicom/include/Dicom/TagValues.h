@@ -158,13 +158,13 @@ private:
 
 class Group;
 
-class NewSequence {
+class Sequence {
 public:
     using Item = Group;
     using ItemPtr = std::unique_ptr<Item>;
     using ItemPtrContainer = std::vector<ItemPtr>;
 
-    NewSequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
+    Sequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
         : m_tag(a_tag)
         , m_items(std::move(a_items))
     {}
@@ -312,7 +312,7 @@ private:
 private:
     TagVector<TagValue> m_tags;
     std::vector<uint32_t> m_data_buf;
-    std::vector<NewSequence> m_sequences;
+    std::vector<Sequence> m_sequences;
 };
 
 template <>
