@@ -156,11 +156,11 @@ private:
     bool m_sorted = true;
 };
 
-class NewGroup;
+class Group;
 
 class NewSequence {
 public:
-    using Item = NewGroup;
+    using Item = Group;
     using ItemPtr = std::unique_ptr<Item>;
     using ItemPtrContainer = std::vector<ItemPtr>;
 
@@ -183,7 +183,7 @@ private:
 };
 
 
-class NewGroup {
+class Group {
 public:
     template <typename T>
     void AddTag(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream) {
@@ -199,7 +199,7 @@ public:
             m_tags.emplace(a_tag, a_vr); // no value
     }
 
-    void AddSequence(const Tag a_tag, std::vector<std::unique_ptr<NewGroup>> a_groups) {
+    void AddSequence(const Tag a_tag, std::vector<std::unique_ptr<Group>> a_groups) {
         auto offset = static_cast<uint32_t>(m_sequences.size());
         m_tags.emplace(a_tag, VRType::SQ, offset);
         m_sequences.emplace_back(a_tag, std::move(a_groups));
@@ -316,7 +316,7 @@ private:
 };
 
 template <>
-inline void NewGroup::AddTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream) {
+inline void Group::AddTag<double>(const Tag a_tag, const VRType a_vr, const uint32_t a_valueElements, StreamRead& a_stream) {
     const auto offset = LoadDataToBuf(a_stream, a_valueElements * sizeof(double));
     if (offset.has_value())
         m_tags.emplace(a_tag, a_vr, *offset);

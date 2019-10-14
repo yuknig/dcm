@@ -23,7 +23,7 @@ namespace dcm
 
 struct ReadParamDesc
 {
-    NewGroup&   m_dest;
+    Group&      m_dest;
     StreamRead& m_stream;
     uint32_t    m_length;
     Tag         m_tag;
@@ -53,7 +53,7 @@ bool readParamStr(const ReadParamDesc& a_param, const VRType& a_vr)
     return true;
 }
 
-bool readDicomParams(NewGroup& a_dest,
+bool readDicomParams(Group& a_dest,
                      StreamRead& a_stream,
                      const TagDesc& a_tag_desc)
 {
@@ -248,7 +248,7 @@ bool readDicomParams(NewGroup& a_dest,
 struct TagMemoryGroup
 {
 public://functions
-    TagMemoryGroup(const char* a_ptr, size_t a_memSize, const std::shared_ptr<NewGroup>& a_parentGroup/*, const ParserConfig& a_config*/)
+    TagMemoryGroup(const char* a_ptr, size_t a_memSize, const std::shared_ptr<Group>& a_parentGroup/*, const ParserConfig& a_config*/)
         : m_ptr(a_ptr)
         , m_memSize(a_memSize)
         , m_parentGroup(a_parentGroup)
@@ -258,7 +258,7 @@ public://functions
 public://data
     const char*  m_ptr;
     size_t       m_memSize;
-    std::shared_ptr<NewGroup> m_parentGroup;
+    std::shared_ptr<Group> m_parentGroup;
     //ParserConfig m_config;
 };
 
@@ -277,7 +277,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
     if (a_stream.isEnd())
         return false;
 
-    auto root = std::make_shared<NewGroup>();
+    auto root = std::make_shared<Group>();
     size_t start_offset = 0;
 
     {
@@ -340,7 +340,7 @@ std::optional<size_t> Parser::ParseHeader(StreamRead& a_stream)
     return SignatureOfsset + 4/*sizeof(uint32_t)*/;
 }
 
-std::shared_ptr<NewGroup> Parser::root() const
+std::shared_ptr<Group> Parser::root() const
 {
     return m_root;
 }
@@ -381,7 +381,7 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
 
         if (VRType::SQ == tag_desc->m_vr)
         {
-            std::vector<std::unique_ptr<NewGroup>> sequence_items;
+            std::vector<std::unique_ptr<Group>> sequence_items;
             if (ParseSequence(a_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_items, a_groupQueue))
                 group.m_dest_group->AddSequence(tagNum, std::move(sequence_items));
             else
@@ -406,11 +406,11 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
     return tag_offset;
 }
 
-bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<NewGroup>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse)
+bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<Group>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse)
 {
     auto tag_offset = a_begin_offset;
 
-    std::vector<std::unique_ptr<NewGroup>> items;
+    std::vector<std::unique_ptr<Group>> items;
 
     while (tag_offset < a_end_offset)
     {
@@ -428,7 +428,7 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
 
         const auto value_offset = tag_offset + tag_desc->m_valueOffset;
 
-        auto item = std::make_unique<NewGroup>();
+        auto item = std::make_unique<Group>();
         a_items_to_parse.emplace_back(ParseGroupDesc{ value_offset,
                                              value_offset + tag_desc->m_valueLength,
                                              a_config,
