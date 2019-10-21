@@ -95,11 +95,12 @@ private: // functions
     template <bool Enabled = Reallocatable,
               typename std::enable_if<Enabled, int>::type = 0>
     void reallocate(const SizeT a_new_size) {
-        auto* old_data = m_data.release();
-        m_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(old_data, a_new_size * sizeof(T))));
-        if (!m_data)
+        auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_size * sizeof(T))));
+        if (!new_data)
             throw std::runtime_error("Failed realloc MVector");
 
+        m_data.release();
+        m_data = std::move(new_data);
         m_capacity = a_new_size;
     }
 
