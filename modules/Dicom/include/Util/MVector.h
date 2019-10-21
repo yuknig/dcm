@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
+#define _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
+
 #include <stdexcept>
 #include <type_traits>
 #include <new>
@@ -136,3 +138,5 @@ private:
     SizeT m_size_alloc = 0;
     SizeT m_size_used = 0;
 };
+
+#endif // _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
