@@ -187,9 +187,8 @@ public:
     using ItemPtr = std::unique_ptr<Item>;
     using ItemPtrContainer = std::vector<ItemPtr>;
 
-    Sequence(const Tag& a_tag, std::vector<ItemPtr> a_items)
-        : m_tag(a_tag)
-        , m_items(std::move(a_items))
+    Sequence(std::vector<ItemPtr> a_items)
+        : m_items(std::move(a_items))
     {}
 
     ItemPtrContainer::iterator begin() {
@@ -201,7 +200,6 @@ public:
     }
 
 private:
-    Tag m_tag;
     ItemPtrContainer m_items;
 };
 
@@ -225,7 +223,7 @@ public:
     void AddSequence(const Tag a_tag, std::vector<std::unique_ptr<Group>> a_groups) {
         auto offset = static_cast<uint32_t>(m_sequences.size());
         m_tags.emplace(a_tag, VRType::SQ, offset);
-        m_sequences.emplace_back(a_tag, std::move(a_groups));
+        m_sequences.emplace_back(std::move(a_groups));
         //TODO: implement
     }
 
