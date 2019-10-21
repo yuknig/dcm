@@ -139,6 +139,7 @@ public:
             [](const TagValue& lhs, const TagValue& rhs) {
             return lhs.tag() < rhs.tag();
         });
+        m_sorted = true;
     }
 
     void ShrinkToFit() {
