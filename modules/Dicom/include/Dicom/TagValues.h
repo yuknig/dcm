@@ -12,12 +12,10 @@
 #include "Util/CastValue.h" //TODO: harmonize style of includes
 
 #include <vector>
-#include <bitset>
 #include <memory>
 #include <algorithm>
 #include <cstring>
 #include <cassert>
-#include <type_traits>
 
 namespace dcm
 {
