@@ -47,7 +47,7 @@ public:
     }
 
     const T& operator[](const size_t a_pos) const {
-        assert(a_pos < m_size);
+        assert(a_pos < size());
 
         return *(m_data.get() + a_pos);
     }
@@ -61,11 +61,11 @@ public:
     }
 
     const T* cbegin() const {
-        return m_data.get();
+        return data();
     }
 
     T* begin() {
-        return m_data.get();
+        return data();
     }
 
     const T* cend() const {
@@ -98,7 +98,7 @@ private: // functions
         auto* old_data = m_data.release();
         m_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(old_data, a_new_size * sizeof(T))));
         if (!m_data)
-            throw std::runtime_error("Failed realloc SortedTagList");
+            throw std::runtime_error("Failed realloc MVector");
 
         m_capacity = a_new_size;
     }
@@ -110,7 +110,7 @@ private: // functions
     void reallocate(const SizeT a_new_size) {
         std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_size * sizeof(T))));
         if (!new_data)
-            throw std::runtime_error("Failed to alloc SortedTagList");
+            throw std::runtime_error("Failed to alloc MVector");
 
         for(size_t i = 0; i < m_size; ++i)
             new (new_data.get() + i) T (std::move(*(m_data.get() + i)));
