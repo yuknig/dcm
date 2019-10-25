@@ -1,6 +1,7 @@
 #ifndef _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
 #define _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
 
+#include <cassert>
 #include <stdexcept>
 #include <type_traits>
 #include <new>
@@ -85,10 +86,14 @@ private: // functions
         reallocate(new_size_alloc);
     }
 
-    static SizeT sizeIncrement(size_t a_size) {
-        const size_t result = 1 < a_size ? a_size + a_size / 2 : 4;
+    static SizeT sizeIncrement(const size_t a_capacity) {
+        size_t result = a_capacity + a_capacity / 2; // 1.5x increase
+        if (result <= a_capacity)
+            result = a_capacity + 4u;
+
         if (std::numeric_limits<SizeT>::max() < result)
             throw std::runtime_error("Too many elements");
+        assert(result > a_capacity);
         return static_cast<SizeT>(result);
     }
 
