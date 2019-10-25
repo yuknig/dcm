@@ -100,22 +100,24 @@ private: // functions
 
     template <bool Enabled = Reallocatable,
               typename std::enable_if<Enabled, int>::type = 0>
-    void reallocate(const SizeT a_new_size) {
-        auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_size * sizeof(T))));
+    void reallocate(const SizeT a_new_capacity) {
+        assert(a_new_capacity > m_capacity);
+        auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_capacity * sizeof(T))));
         if (!new_data)
             throw std::runtime_error("Failed realloc MVector");
 
         m_data.release();
         m_data = std::move(new_data);
-        m_capacity = a_new_size;
+        m_capacity = a_new_capacity;
     }
 
     template <typename U = T,
               bool Enabled = Reallocatable,
               typename std::enable_if<std::is_move_constructible<U>::value &&
                                       !Reallocatable, int>::type = 0>
-    void reallocate(const SizeT a_new_size) {
-        std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_size * sizeof(T))));
+    void reallocate(const SizeT a_new_capacity) {
+        assert(a_new_capacity > m_capacity);
+        std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_capacity * sizeof(T))));
         if (!new_data)
             throw std::runtime_error("Failed to alloc MVector");
 
@@ -123,7 +125,7 @@ private: // functions
             new (new_data.get() + i) T (std::move(*(m_data.get() + i)));
 
         m_data.swap(new_data);
-        m_capacity = a_new_size;
+        m_capacity = a_new_capacity;
     }
 
     template <typename U = T,
