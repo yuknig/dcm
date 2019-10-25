@@ -18,11 +18,10 @@ class MVector {
     static_assert(std::is_integral<SizeT>::value && std::is_unsigned<SizeT>::value, "SizeT type should be integral and unsigned");
 
 public:
-    MVector() {
-    }
+    MVector() = default;
 
     ~MVector() {
-        deleteObjects();
+        deleteObjects(0);
         m_data.reset();
         m_capacity = 0;
     }
@@ -36,6 +35,8 @@ public:
     }
 
     void resize(size_t a_new_size) {
+        //TODO if (a_new_size < a_size)
+        
         reallocate(a_new_size);
     }
 
@@ -127,16 +128,16 @@ private: // functions
 
     template <typename U = T,
               typename std::enable_if<std::is_destructible<U>::value, int>::type = 0>
-    void deleteObjects() {
-        for (size_t i = 0; i < m_size; ++i)
+    void deleteObjects(SizeT a_start_from) {
+        for (size_t i = a_start_from; i < m_size; ++i)
             (m_data.get() + i)->~T();
-        m_size = 0;
+        m_size = a_start_from;
     }
 
     template <typename U = T,
               typename std::enable_if<!std::is_destructible<U>::value, int>::type = 0>
-    void deleteObjects() {
-        m_size = 0;
+    void deleteObjects(SizeT a_start_from) {
+        m_size = a_start_from;
     }
 
 private:
