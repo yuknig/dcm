@@ -21,7 +21,7 @@ public:
     MVector() = default;
 
     ~MVector() {
-        deleteObjects(0);
+        deleteElementsFrom(0);
         m_data.reset();
         m_capacity = 0;
     }
@@ -129,17 +129,19 @@ private: // functions
     }
 
     template <bool Enabled = std::is_destructible<T>::value>
-    void deleteObjects(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
+    void deleteElementsFrom(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
         static_assert(std::is_destructible<T>::value, "wrong specialization");
 
-        for (SizeT i = a_start_from; i < m_size; ++i)
-            (m_data.get() + i)->~T();
-        m_size = a_start_from;
+        if (a_start_from < m_size) {
+            for (SizeT i = a_start_from; i < m_size; ++i)
+                (m_data.get() + i)->~T();
+            m_size = a_start_from;
+        }
     }
 
     template <typename U = T,
               bool Enabled = !std::is_destructible<U>::value>
-    void deleteObjects(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
+    void deleteElementsFrom(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
         static_assert(!std::is_destructible<T>::value, "wrong specialization");
 
         m_size = a_start_from;
