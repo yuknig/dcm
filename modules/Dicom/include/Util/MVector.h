@@ -98,10 +98,11 @@ private: // functions
         return static_cast<SizeT>(result);
     }
 
-    template <bool Enabled = Reallocatable,
-              typename std::enable_if<Enabled, int>::type = 0>
-    void reallocate(const SizeT a_new_capacity) {
+    void reallocate(const typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
+        static_assert(Reallocatable, "wrong specialization");
+
         assert(a_new_capacity > m_capacity);
+
         auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_capacity * sizeof(T))));
         if (!new_data)
             throw std::runtime_error("Failed realloc MVector");
@@ -111,12 +112,11 @@ private: // functions
         m_capacity = a_new_capacity;
     }
 
-    template <typename U = T,
-              bool Enabled = Reallocatable,
-              typename std::enable_if<std::is_move_constructible<U>::value &&
-                                      !Reallocatable, int>::type = 0>
-    void reallocate(const SizeT a_new_capacity) {
+    template <bool Enabled = !Reallocatable && std::is_move_constructible<T>::value>
+    void reallocate(const typename std::enable_if<Enabled, SizeT>::type a_new_capacity) {
+        static_assert(!Reallocatable && std::is_move_constructible<T>::value, "wrong specialization");
         assert(a_new_capacity > m_capacity);
+
         std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_capacity * sizeof(T))));
         if (!new_data)
             throw std::runtime_error("Failed to alloc MVector");
@@ -128,17 +128,20 @@ private: // functions
         m_capacity = a_new_capacity;
     }
 
-    template <typename U = T,
-              typename std::enable_if<std::is_destructible<U>::value, int>::type = 0>
-    void deleteObjects(SizeT a_start_from) {
+    template <bool Enabled = std::is_destructible<T>::value>
+    void deleteObjects(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
+        static_assert(std::is_destructible<T>::value, "wrong specialization");
+
         for (size_t i = a_start_from; i < m_size; ++i)
             (m_data.get() + i)->~T();
         m_size = a_start_from;
     }
 
     template <typename U = T,
-              typename std::enable_if<!std::is_destructible<U>::value, int>::type = 0>
-    void deleteObjects(SizeT a_start_from) {
+              bool Enabled = !std::is_destructible<U>::value>
+    void deleteObjects(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
+        static_assert(!std::is_destructible<T>::value, "wrong specialization");
+
         m_size = a_start_from;
     }
 
