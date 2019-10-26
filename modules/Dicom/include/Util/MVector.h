@@ -34,7 +34,7 @@ public:
         ++m_size;
     }
 
-    void resize(size_t a_new_size) {
+    void resize(SizeT a_new_size) {
         //TODO if (a_new_size < a_size)
         
         reallocate(a_new_size);
@@ -48,7 +48,7 @@ public:
         return (0 == size());
     }
 
-    const T& operator[](const size_t a_pos) const {
+    const T& operator[](const SizeT a_pos) const {
         assert(a_pos < size());
 
         return *(m_data.get() + a_pos);
@@ -87,7 +87,7 @@ private: // functions
         reallocate(new_size_alloc);
     }
 
-    static SizeT sizeIncrement(const size_t a_capacity) {
+    static SizeT sizeIncrement(const SizeT a_capacity) {
         size_t result = a_capacity + a_capacity / 2; // 1.5x increase
         if (result <= a_capacity)
             result = a_capacity + 4u;
@@ -121,7 +121,7 @@ private: // functions
         if (!new_data)
             throw std::runtime_error("Failed to alloc MVector");
 
-        for(size_t i = 0; i < m_size; ++i)
+        for(SizeT i = 0; i < m_size; ++i)
             new (new_data.get() + i) T (std::move(*(m_data.get() + i)));
 
         m_data.swap(new_data);
@@ -132,7 +132,7 @@ private: // functions
     void deleteObjects(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
         static_assert(std::is_destructible<T>::value, "wrong specialization");
 
-        for (size_t i = a_start_from; i < m_size; ++i)
+        for (SizeT i = a_start_from; i < m_size; ++i)
             (m_data.get() + i)->~T();
         m_size = a_start_from;
     }
