@@ -41,6 +41,16 @@ public:
             resize_shrink(a_new_size);
     }
 
+    void reserve(SizeT a_new_size) {
+        if (a_new_size > m_capacity)
+            resize_expand(a_new_size);
+    }
+
+    void shrink_to_fit() {
+        if (m_capacity > m_size)
+            resize_shrink(m_size);
+    }
+
     SizeT size() const {
         return m_size;
     }
