@@ -21,14 +21,14 @@ public:
     MVector() = default;
 
     ~MVector() {
-        deleteElementsFrom(0);
+        delete_elements_from(0);
         m_data.reset();
         m_capacity = 0;
     }
 
     template <typename... ArgsT>
     void emplace_back(ArgsT&&... a_args) {
-        checkAllocSize();
+        check_alloc_size();
 
         new (m_data.get() + m_size) T {std::forward<ArgsT>(a_args)...};
         ++m_size;
@@ -80,15 +80,15 @@ public:
     }
 
 private: // functions
-    void checkAllocSize() {
+    void check_alloc_size() {
         if (m_capacity > m_size)
             return;
 
-        const auto new_size_alloc = sizeIncrement(m_capacity);
+        const auto new_size_alloc = size_increment(m_capacity);
         resize_expand(new_size_alloc);
     }
 
-    static SizeT sizeIncrement(const SizeT a_capacity) {
+    static SizeT size_increment(const SizeT a_capacity) {
         size_t result = a_capacity + a_capacity / 2; // 1.5x increase
         if (result <= a_capacity)
             result = a_capacity + 4u;
@@ -102,16 +102,16 @@ private: // functions
     void resize_expand(SizeT a_new_capacity) {
         assert(a_new_capacity > m_capacity);
 
-        reallocAndRecreateElements(a_new_capacity);
+        realloc_and_recreate_elements(a_new_capacity);
     }
 
     void resize_shrink(SizeT a_new_capacity) {
         assert(a_new_capacity < m_capacity);
 
-        deleteElementsFrom(a_new_capacity);
+        delete_elements_from(a_new_capacity);
     }
 
-    void reallocAndRecreateElements(typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
+    void realloc_and_recreate_elements(typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
         static_assert(Reallocatable, "wrong specialization");
 
         auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_capacity * sizeof(T))));
@@ -124,7 +124,7 @@ private: // functions
     }
 
     template <bool Enabled = !Reallocatable && std::is_move_constructible<T>::value>
-    void reallocAndRecreateElements(const typename std::enable_if<Enabled, SizeT>::type a_new_capacity) {
+    void realloc_and_recreate_elements(const typename std::enable_if<Enabled, SizeT>::type a_new_capacity) {
         static_assert(!Reallocatable && std::is_move_constructible<T>::value, "wrong specialization");
 
         std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_capacity * sizeof(T))));
@@ -138,7 +138,7 @@ private: // functions
     }
 
     template <bool Enabled = std::is_destructible<T>::value>
-    void deleteElementsFrom(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
+    void delete_elements_from(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
         static_assert(std::is_destructible<T>::value, "wrong specialization");
 
         if (a_start_from < m_size) {
@@ -150,7 +150,7 @@ private: // functions
 
     template <typename U = T,
               bool Enabled = !std::is_destructible<U>::value>
-    void deleteElementsFrom(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
+    void delete_elements_from(typename std::enable_if<Enabled, SizeT>::type a_start_from) {
         static_assert(!std::is_destructible<T>::value, "wrong specialization");
 
         m_size = a_start_from;
