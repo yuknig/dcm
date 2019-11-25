@@ -35,9 +35,10 @@ public:
     }
 
     void resize(SizeT a_new_size) {
-        //TODO if (a_new_size < a_size)
-        
-        reallocate(a_new_size);
+        if (a_new_size > m_capacity)
+            resize_expand(a_new_size);
+        else if (a_new_size < m_capacity)
+            resize_shrink(a_new_size);
     }
 
     SizeT size() const {
@@ -84,7 +85,7 @@ private: // functions
             return;
 
         const auto new_size_alloc = sizeIncrement(m_capacity);
-        reallocate(new_size_alloc);
+        resize_expand(new_size_alloc);
     }
 
     static SizeT sizeIncrement(const SizeT a_capacity) {
@@ -98,10 +99,16 @@ private: // functions
         return static_cast<SizeT>(result);
     }
 
-    void reallocate(SizeT a_new_capacity) {
-        if (a_new_capacity < m_capacity)
-            deleteElementsFrom(a_new_capacity);
+    void resize_expand(SizeT a_new_capacity) {
+        assert(a_new_capacity > m_capacity);
+
         reallocAndRecreateElements(a_new_capacity);
+    }
+
+    void resize_shrink(SizeT a_new_capacity) {
+        assert(a_new_capacity < m_capacity);
+
+        deleteElementsFrom(a_new_capacity);
     }
 
     void reallocAndRecreateElements(typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
