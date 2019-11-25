@@ -98,10 +98,14 @@ private: // functions
         return static_cast<SizeT>(result);
     }
 
-    void reallocate(const typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
-        static_assert(Reallocatable, "wrong specialization");
+    void reallocate(SizeT a_new_capacity) {
+        if (a_new_capacity < m_capacity)
+            deleteElementsFrom(a_new_capacity);
+        reallocAndRecreateElements(a_new_capacity);
+    }
 
-        assert(a_new_capacity > m_capacity);
+    void reallocAndRecreateElements(typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
+        static_assert(Reallocatable, "wrong specialization");
 
         auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_capacity * sizeof(T))));
         if (!new_data)
@@ -113,18 +117,16 @@ private: // functions
     }
 
     template <bool Enabled = !Reallocatable && std::is_move_constructible<T>::value>
-    void reallocate(const typename std::enable_if<Enabled, SizeT>::type a_new_capacity) {
+    void reallocAndRecreateElements(const typename std::enable_if<Enabled, SizeT>::type a_new_capacity) {
         static_assert(!Reallocatable && std::is_move_constructible<T>::value, "wrong specialization");
-        assert(a_new_capacity > m_capacity);
 
         std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_capacity * sizeof(T))));
         if (!new_data)
             throw std::runtime_error("Failed to alloc MVector");
 
-        for(SizeT i = 0; i < m_size; ++i)
-            new (new_data.get() + i) T (std::move(*(m_data.get() + i)));
-
-        m_data.swap(new_data);
+        for (SizeT i = 0; i < m_size; ++i)
+            new (new_data.get() + i) T(std::move(*(m_data.get() + i)));
+        m_data = std::move(new_data);
         m_capacity = a_new_capacity;
     }
 
