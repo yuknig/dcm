@@ -28,7 +28,7 @@ public:
 
     template <typename... ArgsT>
     void emplace_back(ArgsT&&... a_args) {
-        check_alloc_size();
+        check_capacity(1);
 
         new (m_data.get() + m_size) T {std::forward<ArgsT>(a_args)...};
         ++m_size;
@@ -80,23 +80,28 @@ public:
     }
 
 private: // functions
-    void check_alloc_size() {
-        if (m_capacity > m_size)
+    void check_capacity(SizeT elements_to_add) {
+        size_t min_capacity = m_size + elements_to_add;
+        if (min_capacity <= m_capacity)
             return;
 
-        const auto new_size_alloc = size_increment(m_capacity);
-        resize_expand(new_size_alloc);
+        size_t capacity = std::max(min_capacity, capacity_incremented(m_capacity));
+        if (capacity > std::numeric_limits<SizeT>::max()) {
+            capacity = std::numeric_limits<SizeT>::max();
+            if (capacity < min_capacity)
+                throw std::length_error(std::string("too many elements:") + std::to_string(min_capacity));
+        }
+        resize_expand(static_cast<SizeT>(capacity));
     }
 
-    static SizeT size_increment(const SizeT a_capacity) {
+    static size_t capacity_incremented(const size_t a_capacity) {
         size_t result = a_capacity + a_capacity / 2; // 1.5x increase
         if (result <= a_capacity)
             result = a_capacity + 4u;
 
-        if (std::numeric_limits<SizeT>::max() < result)
-            throw std::runtime_error("Too many elements");
+        //TODO: align capacity
         assert(result > a_capacity);
-        return static_cast<SizeT>(result);
+        return result;
     }
 
     void resize_expand(SizeT a_new_capacity) {
