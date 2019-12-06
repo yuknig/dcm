@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <new>
 #include <memory>
+#include <string>
 
 struct FreeDeleter {
     void operator()(void* x) {
@@ -51,6 +52,10 @@ public:
             realloc_shrink(m_size, true);
     }
 
+    SizeT capacity() const {
+        return m_capacity;
+    }
+
     SizeT size() const {
         return m_size;
     }
@@ -61,8 +66,24 @@ public:
 
     const T& operator[](const SizeT a_pos) const {
         assert(a_pos < size());
-
         return *(m_data.get() + a_pos);
+    }
+
+    T& operator[](const SizeT a_pos) {
+        assert(a_pos < size());
+        return *(m_data.get() + a_pos);
+    }
+
+    const T& at(const SizeT a_pos) const {
+        if (a_pos >= size())
+            throw std::out_of_range(std::string(__func__) + "wrong index: " + std::to_string(a_pos));
+        return this->operator[](a_pos);
+    }
+
+    T& at(const SizeT a_pos) {
+        if (a_pos >= size())
+            throw std::out_of_range(std::string(__func__) + "wrong index: " + std::to_string(a_pos));
+        return this->operator[](a_pos);
     }
 
     const T* data() const {
@@ -77,6 +98,10 @@ public:
         return data();
     }
 
+    const T* begin() const {
+        return cbegin();
+    }
+
     T* begin() {
         return data();
     }
@@ -85,8 +110,32 @@ public:
         return cbegin() + m_size;
     }
 
+    const T* end() const {
+        return cend();
+    }
+
     T* end() {
         return begin() + m_size;
+    }
+
+    const T& front() const {
+        return this->at(0);
+    }
+
+    T& front() {
+        return this->at(0);
+    }
+
+    const T& back() const {
+        if (this->empty())
+            throw std::out_of_range(std::string(__func__) + ": container is empty");
+        return this->operator[](size() - 1);
+    }
+
+    T& back() {
+        if (this->empty())
+            throw std::out_of_range(std::string(__func__) + ": container is empty");
+        return this->operator[](size() - 1);
     }
 
 private: // functions
