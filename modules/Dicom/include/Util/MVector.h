@@ -192,7 +192,9 @@ private: // functions
             realloc_and_recreate_elements(a_new_capacity);
     }
 
-    void realloc_and_recreate_elements(typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
+    template <bool Enabled = Reallocatable,
+              typename std::enable_if<Enabled, int>::type = 0>
+    void realloc_and_recreate_elements(const SizeT a_new_capacity) {
         static_assert(Reallocatable, "wrong specialization");
 
         auto new_data = std::unique_ptr<T, FreeDeleter>(static_cast<T*>(realloc(m_data.get(), a_new_capacity * sizeof(T))));
@@ -204,8 +206,10 @@ private: // functions
         m_capacity = a_new_capacity;
     }
 
-    template <bool Enabled = !Reallocatable && std::is_move_constructible<T>::value>
-    void realloc_and_recreate_elements(const typename std::enable_if<Enabled, SizeT>::type a_new_capacity) {
+    template <bool Enabled = !Reallocatable && std::is_move_constructible<T>::value,
+              typename std::enable_if<Enabled, int>::type = 0,
+              typename ...>
+    void realloc_and_recreate_elements(const SizeT a_new_capacity) {
         static_assert(!Reallocatable && std::is_move_constructible<T>::value, "wrong specialization");
 
         std::unique_ptr<T, FreeDeleter> new_data(static_cast<T*>(malloc(a_new_capacity * sizeof(T))));
