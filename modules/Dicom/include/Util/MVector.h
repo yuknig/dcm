@@ -38,7 +38,7 @@ public:
         if (a_new_size > m_capacity)
             resize_expand(a_new_size);
         else if (a_new_size < m_capacity)
-            resize_shrink(a_new_size);
+            resize_shrink(a_new_size, false);
     }
 
     void reserve(SizeT a_new_size) {
@@ -48,7 +48,7 @@ public:
 
     void shrink_to_fit() {
         if (m_capacity > m_size)
-            resize_shrink(m_size);
+            resize_shrink(m_size, true);
     }
 
     SizeT size() const {
@@ -120,10 +120,12 @@ private: // functions
         realloc_and_recreate_elements(a_new_capacity);
     }
 
-    void resize_shrink(SizeT a_new_capacity) {
+    void resize_shrink(SizeT a_new_capacity, bool do_realloc) {
         assert(a_new_capacity < m_capacity);
 
         delete_elements_from(a_new_capacity);
+        if (do_realloc)
+            realloc_and_recreate_elements(a_new_capacity);
     }
 
     void realloc_and_recreate_elements(typename std::enable_if<Reallocatable, SizeT>::type a_new_capacity) {
