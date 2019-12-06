@@ -36,19 +36,19 @@ public:
 
     void resize(SizeT a_new_size) {
         if (a_new_size > m_capacity)
-            resize_expand(a_new_size);
+            realloc_expand(a_new_size);
         else if (a_new_size < m_capacity)
-            resize_shrink(a_new_size, false);
+            realloc_shrink(a_new_size, false);
     }
 
     void reserve(SizeT a_new_size) {
         if (a_new_size > m_capacity)
-            resize_expand(a_new_size);
+            realloc_expand(a_new_size);
     }
 
     void shrink_to_fit() {
         if (m_capacity > m_size)
-            resize_shrink(m_size, true);
+            realloc_shrink(m_size, true);
     }
 
     SizeT size() const {
@@ -101,7 +101,7 @@ private: // functions
             if (capacity < min_capacity)
                 throw std::length_error(std::string("too many elements:") + std::to_string(min_capacity));
         }
-        resize_expand(static_cast<SizeT>(capacity));
+        realloc_expand(static_cast<SizeT>(capacity));
     }
 
     static size_t capacity_incremented(const size_t a_capacity) {
@@ -114,13 +114,13 @@ private: // functions
         return result;
     }
 
-    void resize_expand(SizeT a_new_capacity) {
+    void realloc_expand(SizeT a_new_capacity) {
         assert(a_new_capacity > m_capacity);
 
         realloc_and_recreate_elements(a_new_capacity);
     }
 
-    void resize_shrink(SizeT a_new_capacity, bool do_realloc) {
+    void realloc_shrink(SizeT a_new_capacity, bool do_realloc) {
         assert(a_new_capacity < m_capacity);
 
         delete_elements_from(a_new_capacity);
