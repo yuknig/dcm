@@ -35,9 +35,24 @@ public:
         ++m_size;
     }
 
+    template <typename U = T,
+              typename std::enable_if<std::is_default_constructible<U>::value, int>::type = 0>
     void resize(SizeT a_new_size) {
-        if (a_new_size > m_capacity)
+        if (a_new_size > m_capacity) {
             realloc_expand(a_new_size);
+            while (m_size < a_new_size)
+                new (m_data.get() + m_size++) T();
+        }
+        else if (a_new_size < m_capacity)
+            realloc_shrink(a_new_size, false);
+    }
+
+    void resize(SizeT a_new_size, const T& a_value) {
+        if (a_new_size > m_capacity) {
+            realloc_expand(a_new_size);
+            while (m_size < a_new_size)
+                new (m_data.get() + m_size++) T (a_value);
+        }
         else if (a_new_size < m_capacity)
             realloc_shrink(a_new_size, false);
     }
