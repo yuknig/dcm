@@ -173,7 +173,8 @@ private:
     }
 
 private:
-    std::vector<TagT> m_tags;
+    MVector<TagT> m_tags;
+    //std::vector<TagT> m_tags; // left here for more convinient debugging
     bool m_sorted = true;
 };
 
@@ -279,7 +280,8 @@ private:
 
 private:
     TagVector<TagValue> m_tags;
-    std::vector<uint32_t> m_data_buf;
+    MVector<uint32_t> m_data_buf;
+    //std::vector<uint32_t> m_data_buf; // left here for more convinient debugging
     std::vector<Sequence> m_sequences;
 };
 
