@@ -199,8 +199,109 @@ bool IsString() {
 
 } // namespace detail
 
-template <typename FromT, typename ToT>
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_same<FromT, ToT>::value, int>::type = 0,
+          typename ...>
 CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_Same(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value &&
+                                  std::is_signed<FromT>::value == std::is_signed<ToT>::value &&
+                                  sizeof(FromT) < sizeof(ToT), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromInt_ToInt_SameSign_ToBigger(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value && // TODO: remove is_integral?
+                                  std::is_unsigned<FromT>::value && std::is_unsigned<ToT>::value &&
+                                  (sizeof(FromT) > sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromUnsignedInt_ToUnsignedInt_ToSmaller(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value &&
+                                  std::is_signed<FromT>::value && std::is_signed<ToT>::value &&
+                                  (sizeof(FromT) > sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromSignedInt_ToSignedInt_ToSmaller(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value &&
+                                  std::is_signed<FromT>::value && std::is_unsigned<ToT>::value &&
+                                  (sizeof(FromT) <= sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromSignedInt_ToUnsignedInt_ToBigger(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value &&
+                                  std::is_signed<FromT>::value && std::is_unsigned<ToT>::value &&
+                                  (sizeof(FromT) > sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromSignedInt_ToUnsignedInt_ToSmaller(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value &&
+                                  std::is_unsigned<FromT>::value && std::is_signed<ToT>::value &&
+                                  (sizeof(FromT) < sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromUnsignedInt_ToSignedInt_ToBigger(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_integral<ToT>::value &&
+                                  std::is_unsigned<FromT>::value && std::is_signed<ToT>::value &&
+                                  (sizeof(FromT) >= sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromUnsignedInt_ToSignedInt_ToSmaller(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_integral<FromT>::value && std::is_floating_point<ToT>::value, int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromInt_ToFloat(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_floating_point<FromT>::value && std::is_integral<ToT>::value, int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromFloat_ToInt(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_floating_point<FromT>::value && std::is_floating_point<ToT>::value &&
+                                  (sizeof(FromT) > sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromDouble_ToFloat(a_from, a_to);
+}
+
+template <typename FromT, typename ToT,
+          typename std::enable_if<std::is_floating_point<FromT>::value && std::is_floating_point<ToT>::value &&
+                                  (sizeof(FromT) < sizeof(ToT)), int>::type = 0,
+          typename ...>
+CastResult CastValue(const FromT& a_from, ToT& a_to) {
+    return detail::CastValue_FromFloat_ToDouble(a_from, a_to);
+}
+
+
+template <typename FromT, typename ToT>
+CastResult CastValueBranched(const FromT& a_from, ToT& a_to) {
     // TODO: replace 'if' with 'constexpr if' if 17 standard is supported
 
     if (std::is_same<FromT, ToT>::value)
