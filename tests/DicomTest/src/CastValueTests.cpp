@@ -1,292 +1,97 @@
 #include <gtest/gtest.h>
 #include <Util/CastValue.h>
 #include <cstdint>
+#include <typeinfo>
 
-// same types - Ok_NoCast
-struct CastCase_Params
+using namespace testing;
+
+namespace
 {
+
+template <typename T>
+bool AreEqual(const T& a_lhs, const T& a_rhs) {
+    return a_lhs == a_rhs;
+}
+
+} // namespace anonymous
+
+struct Case {
     template <typename FromT, typename ToT>
-    explicit CastCase_Params(const CastResult& a_expected_result, const FromT& a_from, const ToT& a_expected_to = ToT())
-        : m_expected_result(a_expected_result)
+    explicit Case(const FromT& a_from, CastResult a_expected_result, ToT a_expected_value = {})
+        : m_type_from(typeid(FromT).name())
+        , m_type_to(typeid(ToT).name())
+        , m_expected_result(a_expected_result)
     {
-        ToT to = {};
-        m_actual_result = CastValue(a_from, to);
-        if (m_expected_result != CastResult::FailedCast)
-            m_to_match = (a_expected_to == to);
+        ToT value = {};
+        m_actual_result = CastValue<FromT, ToT>(a_from, value);
+        if (Succeeded(m_actual_result))
+            m_values_equal = AreEqual(a_expected_value, value);
     }
 
+    const char* m_type_from;
+    const char* m_type_to;
     CastResult m_expected_result = CastResult::FailedCast;
-    CastResult m_actual_result   = CastResult::FailedCast;
-    bool       m_to_match        = false;
+    CastResult m_actual_result = CastResult::FailedCast;
+    bool m_values_equal = false;
 };
 
-struct SameTypes_Params : public CastCase_Params
-{
-    template <typename T>
-    explicit SameTypes_Params(const T& a_value)
-        : CastCase_Params(CastResult::Ok_NoCast, a_value, a_value)
-    {}
-};
+std::ostream& operator<<(std::ostream& a_os, const Case& a_case) {
+    a_os << "<From=" << a_case.m_type_from << ", To=" << a_case.m_type_to << ">";
+    return a_os;
+}
 
-class CastValue_SameTypes : public testing::TestWithParam<SameTypes_Params> {};
-TEST_P(CastValue_SameTypes, RequireThat_CastValue_Behaves_asExpected)
-{
+class CastValue_Tests : public TestWithParam<Case>
+{};
+
+TEST_P(CastValue_Tests,
+       RequireThat_CastResult_ReturnsExpectedValue_WhenCalled) {
     const auto& param = GetParam();
-
     ASSERT_EQ(param.m_expected_result, param.m_actual_result);
-    EXPECT_TRUE(param.m_to_match);
+    if (Succeeded(param.m_actual_result))
+        ASSERT_TRUE(param.m_values_equal);
 }
 
-
-INSTANTIATE_TEST_CASE_P(CastValue_SameTypes_Tests, CastValue_SameTypes, ::testing::ValuesIn(std::initializer_list<SameTypes_Params> {
-        SameTypes_Params(static_cast<int64_t>(std::numeric_limits<int64_t>::max())),
-        SameTypes_Params(static_cast<int64_t>(std::numeric_limits<int64_t>::lowest())),
-        SameTypes_Params(static_cast<int64_t>(70000)),
-        SameTypes_Params(static_cast<int64_t>(-80000)),
-        SameTypes_Params(static_cast<uint64_t>(std::numeric_limits<uint64_t>::max())),
-        SameTypes_Params(static_cast<uint64_t>(std::numeric_limits<uint64_t>::lowest())),
-        SameTypes_Params(static_cast<uint64_t>(0x1234567890AB)),
-        SameTypes_Params(static_cast<int>(std::numeric_limits<int>::max())),
-        SameTypes_Params(static_cast<int>(std::numeric_limits<int>::lowest())),
-        SameTypes_Params(static_cast<int>(100)),
-        SameTypes_Params(static_cast<int>(-300)),
-        SameTypes_Params(static_cast<unsigned int>(std::numeric_limits<unsigned int>::max())),
-        SameTypes_Params(static_cast<unsigned int>(std::numeric_limits<unsigned int>::max())),
-        SameTypes_Params(static_cast<unsigned int>(0x23847f3a)),
-        SameTypes_Params(static_cast<signed short>(std::numeric_limits<signed short>::lowest())),
-        SameTypes_Params(static_cast<signed short>(std::numeric_limits<signed short>::lowest())),
-        SameTypes_Params(static_cast<signed short>(-32000)),
-        SameTypes_Params(static_cast<signed short>(31000)),
-        SameTypes_Params(static_cast<signed short>(std::numeric_limits<unsigned short>::lowest())),
-        SameTypes_Params(static_cast<signed short>(std::numeric_limits<unsigned short>::lowest())),
-        SameTypes_Params(static_cast<signed short>(30000)),
+INSTANTIATE_TEST_CASE_P(CastValue_Tests, CastValue_Tests,
+    ValuesIn(std::initializer_list<Case> {
+//// to same types
+/// 8 bits types
+// we don't know whether char signed or not
+    Case(static_cast<char>(0), CastResult::Ok_NoCast, static_cast<char>(0)),
+    Case(static_cast<char>(SCHAR_MAX), CastResult::Ok_NoCast, static_cast<char>(SCHAR_MAX)),
+// signed char
+    Case(static_cast<signed char>(0), CastResult::Ok_NoCast, static_cast<signed char>(0)),
+    Case(static_cast<signed char>(SCHAR_MAX), CastResult::Ok_NoCast, static_cast<signed char>(SCHAR_MAX)),
+    Case(static_cast<signed char>(SCHAR_MIN), CastResult::Ok_NoCast, static_cast<signed char>(SCHAR_MIN)),
+// unsigned char
+    Case(static_cast<unsigned char>(0), CastResult::Ok_NoCast, static_cast<unsigned char>(0)),
+    Case(static_cast<unsigned char>(UCHAR_MAX), CastResult::Ok_NoCast, static_cast<unsigned char>(UCHAR_MAX)),
+/// 16 bits types
+// signed short
+    Case(static_cast<signed short>(0), CastResult::Ok_NoCast, static_cast<signed short>(0)),
+    Case(static_cast<signed short>(SHRT_MAX), CastResult::Ok_NoCast, static_cast<signed short>(SHRT_MAX)),
+    Case(static_cast<signed short>(SHRT_MIN), CastResult::Ok_NoCast, static_cast<signed short>(SHRT_MIN)),
+// unsigned short
+    Case(static_cast<unsigned short>(0), CastResult::Ok_NoCast, static_cast<unsigned short>(0)),
+    Case(static_cast<unsigned short>(USHRT_MAX), CastResult::Ok_NoCast, static_cast<unsigned short>(USHRT_MAX)),
+// 32 bits types
+// signed int
+    Case(static_cast<int>(0), CastResult::Ok_NoCast, static_cast<int>(0)),
+    Case(static_cast<int>(INT_MAX), CastResult::Ok_NoCast, static_cast<int>(INT_MAX)),
+    Case(static_cast<int>(INT_MIN), CastResult::Ok_NoCast, static_cast<int>(INT_MIN)),
+// unsigned int
+    Case(static_cast<unsigned int>(0), CastResult::Ok_NoCast, static_cast<unsigned int>(0)),
+    Case(static_cast<unsigned int>(UINT_MAX), CastResult::Ok_NoCast, static_cast<unsigned int>(UINT_MAX)),
+/// float point types
+// float
+    Case(0.0f, CastResult::Ok_NoCast, 0.0f),
+    Case(FLT_MAX, CastResult::Ok_NoCast, FLT_MAX),
+    Case(-FLT_MAX, CastResult::Ok_NoCast, -FLT_MAX),
+// double
+    Case(0.0, CastResult::Ok_NoCast, 0.0),
+    Case(DBL_MAX, CastResult::Ok_NoCast, DBL_MAX),
+    Case(-DBL_MAX, CastResult::Ok_NoCast, -DBL_MAX),
+// long double
+    Case(static_cast<long double>(0), CastResult::Ok_NoCast, static_cast<long double>(0)),
+    Case(static_cast<long double>(LDBL_MAX), CastResult::Ok_NoCast, static_cast<long double>(LDBL_MAX)),
+    Case(static_cast<long double>(-LDBL_MAX), CastResult::Ok_NoCast, static_cast<long double>(-LDBL_MAX)),
 }));
-
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastInt64ToInt64)
-{
-    int64_t from = 100, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(100, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUInt64ToUInt64)
-{
-    uint64_t from = 0x1234567890AB, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(0x1234567890AB, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastIntToInt)
-{
-    int from = -2147483647, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(-2147483647, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUIntToUInt)
-{
-    unsigned int from = 0x8890abcd, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(0x8890abcd, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastShortToShort)
-{
-    short from = 21345, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(21345, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUShortToUShort)
-{
-    unsigned short from = 35678, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(35678, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastCharToChar)
-{
-    char from = 100, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(100, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastSCharToSChar)
-{
-    signed char from = -100, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(-100, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUCharToUChar)
-{
-    unsigned char from = 100, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(100, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastFloatToFloat)
-{
-    float from = 500.0f, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(500.0f, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastDoubleToDouble)
-{
-    double from = 500.0, to = 0;
-    EXPECT_EQ(CastResult::Ok_NoCast, CastValue(from, to));
-    EXPECT_EQ(500.0, to);
-}
-
-// smaller to bigger
-
-// 8 bits to short
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastCharToShort)
-{
-    char from = 40;
-    short to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(40, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastSCharToShort)
-{
-    signed char from = 91;
-    short to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(91, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUCharToShort)
-{
-    unsigned char from = 50;
-    short to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(50, to);
-}
-
-// 8 bits to ushort
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastCharToUShort)
-{
-    char from = 40;
-    unsigned short to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(40, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsFailedCast_WhenCastNegativeSCharToUShort)
-{
-    signed char from = -1;
-    unsigned short to = 0;
-    EXPECT_EQ(CastResult::FailedCast, CastValue(from, to));
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUCharToUShort)
-{
-    unsigned char from = 59;
-    unsigned short to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(59, to);
-}
-
-// 8 bits to int
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastCharToInt)
-{
-    char from = 127;
-    int to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(127, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastSCharToInt)
-{
-    signed char from = 72;
-    int to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(72, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUCharToInt)
-{
-    uint8_t from = 126;
-    int to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(126, to);
-}
-
-// 8 bits to uint
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastCharToUInt)
-{
-    char from = 17;
-    unsigned int to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(17, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastSCharToUInt)
-{
-    signed char from = 22;
-    unsigned int to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(22, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsFailedCast_WhenCastNegativeSCharToUInt)
-{
-    int8_t from = -127;
-    unsigned int to = 0;
-    EXPECT_EQ(CastResult::FailedCast, CastValue(from, to));
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastUCharToUInt)
-{
-    unsigned char from = 116;
-    int to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(116, to);
-}
-
-
-// bigger to smaller
-
-// 16 bits to schar
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastSShortToSChar)
-{
-    signed short from = 17001;
-    char to = 0;
-    EXPECT_EQ(CastResult::FailedCast, CastValue(from, to));
-}
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastSShortToSChar_2)
-{
-    signed short from = 128;
-    char to = 0;
-    EXPECT_EQ(CastResult::FailedCast, CastValue(from, to));
-}
-
-
-TEST(CastValue, RequireThat_CastValue_ReturnsOkNoCast_WhenCastIntToChar)
-{
-    int from = 100;
-    char to = 0;
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_EQ(100, to);
-}
-
-TEST(CastValue, RequireThat_CastValue_Returns___WhenCastIntToString)
-{
-    int from = -100;
-    std::string to;
-
-    EXPECT_EQ(CastResult::Ok_CastLoseless, CastValue(from, to));
-    EXPECT_STREQ("-100", to.c_str());
-}
-
-//TODO: check signed char, sint8_t etc
-
