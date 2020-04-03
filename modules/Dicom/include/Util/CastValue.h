@@ -192,7 +192,7 @@ inline CastResult CastValue_FromString(const std::basic_string<CharT>& a_from, T
 }
 
 template <typename T>
-bool IsString() {
+constexpr bool IsString() {
     return (std::is_base_of<std::basic_string<char>, T>::value ||
             std::is_base_of<std::basic_string<wchar_t>, T>::value);
 }
@@ -363,13 +363,14 @@ CastResult CastValueBranched(const FromT& a_from, ToT& a_to) {
         return CastResult::FailedCast;
 }
 
+//TODO: enable_if<IsString>
 template <typename FromT, typename CharToT>
 CastResult CastValueToString(const FromT& a_from, std::basic_string<CharToT>& a_to) {
     return detail::CastValue_ToString(a_from, a_to);
 }
 
-template <typename ToT, typename CharToT>
-CastResult CastValueFromString(const std::basic_string<CharToT>& a_from, ToT& a_to) {
+template <typename CharFromT, typename ToT>
+CastResult CastValueFromString(const std::basic_string<CharFromT>& a_from, ToT& a_to) {
     return detail::CastValue_FromString(a_from, a_to);
 }
 
@@ -378,8 +379,8 @@ CastResult CastValue(const FromT& a_from, std::basic_string<CharToT>& a_to) {
     return CastValueToString(a_from, a_to);
 }
 
-template <typename ToT, typename CharToT>
-CastResult CastValue(const std::basic_string<CharToT>& a_from, ToT& a_to) {
+template <typename CharFromT, typename ToT>
+CastResult CastValue(const std::basic_string<CharFromT>& a_from, ToT& a_to) {
     return CastValueFromString(a_from, a_to);
 }
 
