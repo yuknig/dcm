@@ -38,8 +38,9 @@ public:
     template <typename U = T,
               typename std::enable_if<std::is_default_constructible<U>::value, int>::type = 0>
     void resize(SizeT a_new_size) {
-        if (a_new_size > m_capacity) {
-            realloc_expand(a_new_size);
+        if (a_new_size > m_size) {
+            if (a_new_size > m_capacity)
+                realloc_expand(a_new_size);
             while (m_size < a_new_size)
                 new (m_data.get() + m_size++) T();
         }
@@ -48,8 +49,9 @@ public:
     }
 
     void resize(SizeT a_new_size, const T& a_value) {
-        if (a_new_size > m_capacity) {
-            realloc_expand(a_new_size);
+        if (a_new_size > m_size) {
+            if (a_new_size > m_capacity)
+                realloc_expand(a_new_size);
             while (m_size < a_new_size)
                 new (m_data.get() + m_size++) T (a_value);
         }
