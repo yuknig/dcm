@@ -445,37 +445,47 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
 
 std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile)
 {
+    // stream should be positioned to the start of the tag
+    const auto tag_offset = a_stream.pos();
     const auto tag_vr = getTagAndVr(a_stream, a_explicitFile);
     if (!tag_vr)
         return std::nullopt;
 
-    const auto tag = tag_vr->first;
-    const auto vr  = tag_vr->second;
-    uint8_t  valueOffset = 0;
-    uint32_t valueLength = 0;
+    const auto& tag = tag_vr->first;
+    const auto& vr  = tag_vr->second;
+
+    uint8_t valueLengthOffset = 0;
+    uint8_t valueLengthSize = 0;
+    uint8_t valueOffset = 0;
     const bool isNoVrTag = (tag == ItemTag) || (tag == ItemDelimiter) || (tag == SequenceDelimiter);
     const bool isExplicitVr = isNoVrTag ? false : a_explicitFile;
     if (isExplicitVr)
     {
         if (isSpecialVr(vr))
         {
+            valueLengthOffset = 8;
+            valueLengthSize = 4;
             valueOffset = 12;
-            valueLength = a_stream.readInPlaceWithOffset<uint32_t>(8);
         }
         else
         {
+            valueLengthOffset = 6;
+            valueLengthSize = 2;
             valueOffset = 8;
-            valueLength = a_stream.readInPlaceWithOffset<uint16_t>(6);
         }
     }
     else
     {
+        valueLengthOffset = 4;
+        valueLengthSize = 4;
         valueOffset = 8;
-        valueLength = a_stream.readInPlaceWithOffset<uint32_t>(4);
     }
 
-    const bool isNested = ((VRType::SQ == vr) || (tag == ItemTag));
+    uint32_t valueLength = 0;
+    a_stream.seek(tag_offset + valueLengthOffset);
+    a_stream.readToMem(&valueLength, valueLengthSize);
 
+    const bool isNested = ((VRType::SQ == vr) || (tag == ItemTag));
     static const uint32_t undefLength = 0xffffffff;
     if (undefLength != valueLength)
         return TagDesc(tag, valueOffset + valueLength, valueLength, valueOffset, vr, isNested);
@@ -488,12 +498,12 @@ std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFil
     std::optional<TagDesc> nestedLayout;
     valueLength = 0;
 
-    AutoRewind rewind(a_stream);
-    a_stream.advance(valueOffset);
-
+    AutoRewind rewind(a_stream); // TODO: remove
+    a_stream.seek(tag_offset + valueOffset);
     do
     {
-        nestedLayout = getTagDesc(a_stream, a_explicitFile);
+        a_stream.seek(tag_offset + valueOffset + valueLength);
+        nestedLayout = GetTagDesc(a_stream, a_explicitFile);
         if (!nestedLayout)
         {
             return std::nullopt;
@@ -516,7 +526,7 @@ std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFil
     return std::nullopt;
 }
 
-std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile)
+std::optional<std::pair<Tag, VRType>> getTagAndVr(StreamRead& a_stream, const bool a_explicitFile)
 {
     static const uint32_t ItemTag           = 0xfffee000;
     static const uint32_t ItemDelimiter     = 0xfffee00d;
@@ -539,7 +549,7 @@ std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, co
             return std::nullopt;
         }
 
-        const auto vr = a_stream.readInPlaceWithOffset<uint16_t>(4);
+        const auto vr = a_stream.read<uint16_t>();
         const VRCode vrCode = static_cast<VRCode>(vr);
         vrType = vrCodeToVrType(vrCode);
         assert(VRType::Undefined != vrType);
@@ -551,14 +561,14 @@ std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, co
     return std::make_pair(*tag, vrType);
 }
 
-std::optional<Tag> getTag(const StreamRead& a_stream)
+std::optional<Tag> getTag(StreamRead& a_stream)
 {
     if (sizeof(Tag) > a_stream.sizeToEnd()) // 4 bytes tag
     {
         return std::nullopt;
     }
 
-    const auto data = a_stream.readInPlace<uint32_t>(); // swapped words
+    const auto data = a_stream.read<uint32_t>(); // swapped words
     return Tag(data & 0xffff, data >> 16);
 }
 

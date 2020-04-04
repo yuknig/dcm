@@ -94,8 +94,8 @@ namespace ParseHelper
 std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag);
 bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<Group>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse);
 std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile);
-std::optional<std::pair<Tag, VRType>> getTagAndVr(const StreamRead& a_stream, const bool a_explicitFile);
-std::optional<Tag> getTag(const StreamRead& a_stream);
+std::optional<std::pair<Tag, VRType>> getTagAndVr(StreamRead& a_stream, const bool a_explicitFile);
+std::optional<Tag> getTag(StreamRead& a_stream);
 
 } // namespace ParseHelper
 
