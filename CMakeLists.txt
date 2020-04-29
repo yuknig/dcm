@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.2)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -44,7 +44,7 @@ endif ()
 add_subdirectory(modules/Dicom)
 
 #tests
-add_subdirectory(tests/googletest)
+add_subdirectory(tests/gtest)
 add_subdirectory(tests/DicomTest)
 
 add_executable (${PROJECT} ${HEADERS} ${SOURCES})
