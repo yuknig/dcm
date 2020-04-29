@@ -1,6 +1,7 @@
 #ifndef _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
 #define _MVECTOR_095A6230_53C4_44F3_9960_EA0D824802FF_
 
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 #include <type_traits>

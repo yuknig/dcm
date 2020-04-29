@@ -78,6 +78,11 @@ public:
 
 private:
     struct Token {
+        Token(size_t a_start, size_t a_length)
+            : m_start(a_start)
+            , m_length(a_length)
+        {}
+
         size_t m_start  = 0;
         size_t m_length = 0;
     };
