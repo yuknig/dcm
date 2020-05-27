@@ -367,7 +367,7 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
     while (tag_offset < group.m_stream_end)
     {
         a_stream.seek(tag_offset);
-        const auto tag_desc = ParseHelper::getTagDesc(a_stream, group.m_config.IsExplicit());
+        const auto tag_desc = ParseHelper::GetTagDesc(a_stream, group.m_config.IsExplicit());
         if (!tag_desc)
         {
             assert(false);
@@ -415,7 +415,7 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
     while (tag_offset < a_end_offset)
     {
         a_stream.seek(tag_offset);
-        const auto tag_desc = ParseHelper::getTagDesc(a_stream, a_config.IsExplicit());
+        const auto tag_desc = ParseHelper::GetTagDesc(a_stream, a_config.IsExplicit());
         if (!tag_desc)
         {
             assert(false);
@@ -443,11 +443,11 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
     return true;
 }
 
-std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFile)
+std::optional<TagDesc> GetTagDesc(StreamRead& a_stream, const bool a_explicitFile)
 {
     // stream should be positioned to the start of the tag
     const auto tag_offset = a_stream.pos();
-    const auto tag_vr = getTagAndVr(a_stream, a_explicitFile);
+    const auto tag_vr = GetTagAndVr(a_stream, a_explicitFile);
     if (!tag_vr)
         return std::nullopt;
 
@@ -526,13 +526,13 @@ std::optional<TagDesc> getTagDesc(StreamRead& a_stream, const bool a_explicitFil
     return std::nullopt;
 }
 
-std::optional<std::pair<Tag, VRType>> getTagAndVr(StreamRead& a_stream, const bool a_explicitFile)
+std::optional<std::pair<Tag, VRType>> GetTagAndVr(StreamRead& a_stream, const bool a_explicitFile)
 {
-    static const uint32_t ItemTag           = 0xfffee000;
-    static const uint32_t ItemDelimiter     = 0xfffee00d;
-    static const uint32_t SequenceDelimiter = 0xfffee0dd;
+    constexpr uint32_t ItemTag           = 0xfffee000;
+    constexpr uint32_t ItemDelimiter     = 0xfffee00d;
+    constexpr uint32_t SequenceDelimiter = 0xfffee0dd;
 
-    const auto tag = getTag(a_stream);
+    const auto tag = GetTag(a_stream);
     if (!tag)
     {
         return std::nullopt;
@@ -561,7 +561,7 @@ std::optional<std::pair<Tag, VRType>> getTagAndVr(StreamRead& a_stream, const bo
     return std::make_pair(*tag, vrType);
 }
 
-std::optional<Tag> getTag(StreamRead& a_stream)
+std::optional<Tag> GetTag(StreamRead& a_stream)
 {
     if (sizeof(Tag) > a_stream.sizeToEnd()) // 4 bytes tag
     {
