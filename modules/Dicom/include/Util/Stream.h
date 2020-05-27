@@ -22,14 +22,8 @@ public://functions
 
     template <typename T>
     T read();
-    template <typename T>
-    T readInPlace() const;
-    template <typename T>
-    T readInPlaceWithOffset(size_t a_offset_in_bytes) const;
 
     size_t readToMem(void* a_dest, size_t a_size_in_bytes);
-    size_t readToMemInPlace(void* a_dest, size_t a_size_in_bytes) const;
-    size_t readToMemInPlaceWithOffset(void* a_dest, size_t a_size_in_bytes, size_t a_offset_in_bytes) const;
 
     bool isEnd() const;
 
@@ -46,7 +40,7 @@ public://types
     public://functions
         virtual ~Impl() {}
         //virtual std::unique_ptr<Impl> shrinkClone(size_t a_parent_start, size_t a_parent_end) const = 0;
-        virtual size_t readInPlace(void* a_dest, size_t a_size_in_bytes, size_t a_offset) const = 0;
+        virtual size_t read(void* a_dest, size_t a_size_in_bytes) = 0;
         virtual size_t size() const = 0;
         virtual size_t pos() const = 0;
         virtual bool seek(size_t a_pos) = 0;

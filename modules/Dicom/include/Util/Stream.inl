@@ -4,29 +4,10 @@
 template <typename T>
 T StreamRead::read()
 {
-    const T result = readInPlace<T>();
-    advance(sizeof(T));
-    return result;
-}
+    assert(m_impl);
 
-template <typename T>
-T StreamRead::readInPlace() const
-{
-    return readInPlaceWithOffset<T>(0);
-}
-
-template <typename T>
-T StreamRead::readInPlaceWithOffset(size_t a_offset_in_bytes) const
-{
-    //TODO static_assert is_pod
     T res = {};
-    if (!m_impl)
-    {
-        assert(false);
-        return res;
-    }
-
-    const size_t bytes_read = m_impl->readInPlace(&res, sizeof(T), a_offset_in_bytes);
+    const size_t bytes_read = m_impl->read(&res, sizeof(T));
     if (bytes_read != sizeof(T))
     {
         assert(false);

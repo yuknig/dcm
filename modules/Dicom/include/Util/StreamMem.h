@@ -44,23 +44,16 @@ public://functions
         return std::make_unique<MemStreamImpl>(m_data, m_begin + a_parent_begin, m_begin + a_parent_end);
     }*/
 
-    size_t readInPlace(void* a_dest, size_t a_size_in_bytes, size_t a_offset) const override
+    size_t read(void* a_dest, size_t a_size_in_bytes) override
     {
         assert(a_dest);
         assert(0 < a_size_in_bytes);
         assert(m_end >= m_cur);
 
         const size_t bytes_left = GetBytesLeft();
-        if (a_offset >= bytes_left)
-            return 0;
-
-        const size_t bytes_to_read = std::min(a_size_in_bytes, bytes_left - a_offset);
-        memcpy(a_dest, m_data->data() + m_cur + a_offset, bytes_to_read);
-        if (bytes_to_read < a_size_in_bytes)
-        {
-            assert(false);
-            memset(static_cast<char*>(a_dest) + bytes_to_read, 0, a_size_in_bytes - bytes_to_read);
-        }
+        const size_t bytes_to_read = std::min(a_size_in_bytes, bytes_left);
+        memcpy(a_dest, m_data->data() + m_cur, bytes_to_read);
+        assert(bytes_to_read == a_size_in_bytes);
         return bytes_to_read;
     }
 
