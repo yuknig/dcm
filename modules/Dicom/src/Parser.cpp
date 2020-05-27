@@ -281,7 +281,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
     size_t start_offset = 0;
 
     {
-        auto data_offset = ParseHeader(a_stream);
+        auto data_offset = ParseHelper::GetFirstTagOffset(a_stream);
         if (!data_offset)
             return false;
 
@@ -322,22 +322,6 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
 
     a_root.swap(root);
     return true;
-}
-
-std::optional<size_t> Parser::ParseHeader(StreamRead& a_stream)
-{
-    const uint32_t sign = 0x4D434944;
-    if (sign == a_stream.readInPlace<uint32_t>())
-        return 4u;
-
-    const size_t SignatureOfsset = 128U;
-    if (SignatureOfsset + 4 > a_stream.size())
-    {
-        return std::nullopt;
-    }
-    if (sign != a_stream.readInPlaceWithOffset<uint32_t>(SignatureOfsset))
-        return std::nullopt;
-    return SignatureOfsset + 4/*sizeof(uint32_t)*/;
 }
 
 std::shared_ptr<Group> Parser::root() const
@@ -570,6 +554,25 @@ std::optional<Tag> GetTag(StreamRead& a_stream)
 
     const auto data = a_stream.read<uint32_t>(); // swapped words
     return Tag(data & 0xffff, data >> 16);
+}
+
+std::optional<size_t> GetFirstTagOffset(StreamRead& a_stream)
+{
+    // returns offset of first tag in file
+    constexpr uint32_t sign = 0x4D434944;
+    if (sign == a_stream.read<uint32_t>())
+        return 4u;
+
+    const size_t SignatureOffset = 128U;
+    if (SignatureOffset + 4 > a_stream.size())
+    {
+        return std::nullopt;
+    }
+
+    a_stream.seek(SignatureOffset);
+    if (sign != a_stream.read<uint32_t>())
+        return std::nullopt;
+    return SignatureOffset + 4/*sizeof(uint32_t)*/;
 }
 
 } // namespace ParseHelper

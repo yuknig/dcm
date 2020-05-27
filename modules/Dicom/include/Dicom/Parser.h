@@ -81,7 +81,6 @@ public://functions
 protected://functions
     // move to testable ParserHelper
     static bool Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag);
-    static std::optional<size_t> ParseHeader(StreamRead& a_stream);
 
 private://data
     GroupPtr     m_root;
@@ -96,6 +95,7 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
 std::optional<TagDesc> GetTagDesc(StreamRead& a_stream, const bool a_explicitFile);
 std::optional<std::pair<Tag, VRType>> GetTagAndVr(StreamRead& a_stream, const bool a_explicitFile);
 std::optional<Tag> GetTag(StreamRead& a_stream);
+std::optional<size_t> GetFirstTagOffset(StreamRead& a_stream);
 
 } // namespace ParseHelper
 
