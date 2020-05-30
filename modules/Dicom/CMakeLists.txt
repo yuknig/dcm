@@ -21,7 +21,7 @@ set (HEADERS
              include/Util/Stream.h
              include/Util/Stream.inl
              include/Util/StreamMem.h
-             include/Util/StreamMem.inl
+             include/Util/StreamFile.h
              include/Util/string_util.h
              include/Util/MVector.h
              )

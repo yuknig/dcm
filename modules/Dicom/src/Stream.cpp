@@ -1,4 +1,5 @@
 #include <Util/Stream.h>
+#include <Util/StreamFile.h>
 
 StreamRead::StreamRead(std::unique_ptr<Impl> a_impl)
     : m_impl(std::move(a_impl))
@@ -58,4 +59,10 @@ bool StreamRead::advance(ptrdiff_t a_offset)
 {
     assert(m_impl);
     return m_impl->advance(a_offset);
+}
+
+std::unique_ptr<StreamRead> StreamRead::Create(const std::string& a_filename)
+{
+    std::unique_ptr<FileStreamImpl> impl(new FileStreamImpl(a_filename));
+    return std::unique_ptr<StreamRead>(new StreamRead(std::move(impl)));
 }

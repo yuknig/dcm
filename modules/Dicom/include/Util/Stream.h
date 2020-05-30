@@ -14,9 +14,7 @@ public://data
 public://functions
     template <typename T>
     static std::unique_ptr<StreamRead> Create(const std::shared_ptr<const std::vector<T>>& a_data, const size_t a_begin, const size_t a_end);
-
-    //TODO
-    //static std::unique_ptr<StreamRead> Create(const std::string& a_filename);
+    static std::unique_ptr<StreamRead> Create(const std::string& a_filename);
 
     virtual ~StreamRead();
 
