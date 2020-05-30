@@ -18,5 +18,6 @@ T StreamRead::read()
 template <typename T>
 std::unique_ptr<StreamRead> StreamRead::Create(const std::shared_ptr<const std::vector<T>>& a_data, const size_t a_begin, const size_t a_end)
 {
-    return std::unique_ptr<StreamRead>(new StreamRead(std::make_unique<MemStreamImpl<T>>(a_data, a_begin)));
+    auto impl = std::make_unique<MemStreamImpl<T>>(a_data, a_begin);
+    return std::unique_ptr<StreamRead>(new StreamRead(std::move(impl)));
 }

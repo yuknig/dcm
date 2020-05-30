@@ -16,7 +16,7 @@ public://functions
     static std::unique_ptr<StreamRead> Create(const std::shared_ptr<const std::vector<T>>& a_data, const size_t a_begin, const size_t a_end);
     static std::unique_ptr<StreamRead> Create(const std::string& a_filename);
 
-    virtual ~StreamRead();
+    virtual ~StreamRead() = default;
 
     template <typename T>
     T read();
@@ -36,7 +36,7 @@ public://types
     class Impl
     {
     public://functions
-        virtual ~Impl() {}
+        virtual ~Impl() = default;
         //virtual std::unique_ptr<Impl> shrinkClone(size_t a_parent_start, size_t a_parent_end) const = 0;
         virtual size_t read(void* a_dest, size_t a_size_in_bytes) = 0;
         virtual size_t size() const = 0;
