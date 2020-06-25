@@ -53,24 +53,6 @@ protected://data
     std::unique_ptr<Impl> m_impl;
 };
 
-class AutoRewind
-{
-public://AutoRewind
-    AutoRewind(StreamRead& a_stream)
-        : m_stream(a_stream)
-        , m_pos(a_stream.pos())
-    {}
-
-    ~AutoRewind()
-    {
-        m_stream.seek(m_pos);
-    }
-
-private://data
-    StreamRead& m_stream;
-    size_t      m_pos;
-};
-
 #include <Util/Stream.inl>
 
 #endif

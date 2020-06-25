@@ -482,7 +482,6 @@ std::optional<TagDesc> GetTagDesc(StreamRead& a_stream, const bool a_explicitFil
     std::optional<TagDesc> nestedLayout;
     valueLength = 0;
 
-    AutoRewind rewind(a_stream); // TODO: remove
     a_stream.seek(tag_offset + valueOffset);
     do
     {
