@@ -41,7 +41,7 @@ std::optional<uint32_t> Group::LoadDataToBuf(StreamRead& a_stream, uint32_t byte
 
     m_data_buf.resize(elms_new, 0u);
     m_data_buf[elms_old] = bytes;
-    const size_t bytes_readed = a_stream.readToMem(m_data_buf.data() + elms_old + 1, bytes);
+    const size_t bytes_readed = a_stream.read(m_data_buf.data() + elms_old + 1, bytes);
     if (bytes_readed != bytes) {
         m_data_buf.resize(elms_old); // resize back
         return std::nullopt;

@@ -21,7 +21,7 @@ public://functions
     template <typename T>
     T read();
 
-    size_t readToMem(void* a_dest, size_t a_size_in_bytes);
+    size_t read(void* a_dest, size_t a_size_in_bytes);
 
     bool isEnd() const;
 

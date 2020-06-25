@@ -5,7 +5,7 @@ StreamRead::StreamRead(std::unique_ptr<Impl> a_impl)
     : m_impl(std::move(a_impl))
 {}
 
-size_t StreamRead::readToMem(void* a_dest, size_t a_size_in_bytes)
+size_t StreamRead::read(void* a_dest, size_t a_size_in_bytes)
 {
     assert(m_impl);
     return m_impl->read(a_dest, a_size_in_bytes);

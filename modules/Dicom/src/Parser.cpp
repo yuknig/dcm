@@ -467,7 +467,7 @@ std::optional<TagDesc> GetTagDesc(StreamRead& a_stream, const bool a_explicitFil
 
     uint32_t valueLength = 0;
     a_stream.seek(tag_offset + valueLengthOffset);
-    a_stream.readToMem(&valueLength, valueLengthSize);
+    a_stream.read(&valueLength, valueLengthSize);
 
     const bool isNested = ((VRType::SQ == vr) || (tag == ItemTag));
     static const uint32_t undefLength = 0xffffffff;
