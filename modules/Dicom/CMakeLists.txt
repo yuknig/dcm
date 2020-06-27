@@ -20,6 +20,7 @@ set (HEADERS
              include/Util/optional.h
              include/Util/Stream.h
              include/Util/Stream.inl
+             include/Util/StreamImplT.h
              include/Util/StreamMem.h
              include/Util/StreamFile.h
              include/Util/string_util.h

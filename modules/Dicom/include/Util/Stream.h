@@ -2,9 +2,8 @@
 #define _STREAM_E7ABA6CD_887D_4BBD_A25E_29D6917D82EA_
 
 #include <memory>
+#include <string>
 #include <vector>
-
-class StreamRead;
 
 class StreamRead
 {

@@ -1,24 +1,23 @@
 #ifndef _STREAMMEM_AB7E4C09_71A8_490B_9116_AAB2C1A13DA8_
 #define _STREAMMEM_AB7E4C09_71A8_490B_9116_AAB2C1A13DA8_
 
-#include <Util/Stream.h>
 #include <Dicom/Util.h>
 #include <algorithm>
 #include <cstring>
 
 template <typename T>
-class MemStreamImpl :public StreamRead::Impl
+class MemStreamRead
 {
 public://functions
-    MemStreamImpl(const std::shared_ptr<const std::vector<T>>& a_data)
-        : MemStreamImpl(a_data, 0, a_data->size())
+    MemStreamRead(const std::shared_ptr<const std::vector<T>>& a_data)
+        : MemStreamRead(a_data, 0, a_data->size())
     {}
 
-    MemStreamImpl(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin)
-        : MemStreamImpl(a_data, a_begin, a_data->size())
+    MemStreamRead(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin)
+        : MemStreamRead(a_data, a_begin, a_data->size())
     {}
 
-    MemStreamImpl(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin, size_t a_end)
+    MemStreamRead(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin, size_t a_end)
         : m_data(a_data)
         , m_begin(a_begin)
         , m_end(a_end)
@@ -34,7 +33,7 @@ public://functions
             throw std::invalid_argument("Wrong memory range (a_end>size)");
     }
 
-    ~MemStreamImpl() = default;
+    ~MemStreamRead() = default;
 
     /*std::unique_ptr<Impl> shrinkClone(size_t a_parent_start, size_t a_parent_end) const override
     {
@@ -44,7 +43,7 @@ public://functions
         return std::make_unique<MemStreamImpl>(m_data, m_begin + a_parent_begin, m_begin + a_parent_end);
     }*/
 
-    size_t read(void* a_dest, size_t a_size_in_bytes) override
+    size_t read(void* a_dest, size_t a_size_in_bytes)
     {
         assert(a_dest);
         assert(0 < a_size_in_bytes);
@@ -57,17 +56,17 @@ public://functions
         return bytes_to_read;
     }
 
-    size_t size() const override
+    size_t size() const
     {
         return (m_end > m_begin ? m_end - m_begin : 0u);
     }
 
-    size_t pos() const override
+    size_t pos() const
     {
         return m_cur - m_begin;
     }
 
-    bool seek(size_t a_pos) override
+    bool seek(size_t a_pos)
     {
         const size_t range = m_end - m_begin;
         if (a_pos > range)
@@ -80,7 +79,7 @@ public://functions
         return true;
     }
 
-    bool advance(const ptrdiff_t a_offset) override
+    bool advance(const ptrdiff_t a_offset)
     {
         if (a_offset > 0)
         {
