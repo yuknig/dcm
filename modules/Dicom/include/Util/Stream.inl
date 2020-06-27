@@ -1,5 +1,6 @@
 #include <cassert>
 #include <Util/StreamMem.h>
+#include <Util/StreamImplT.h>
 
 template <typename T>
 T StreamRead::read()
@@ -18,6 +19,7 @@ T StreamRead::read()
 template <typename T>
 std::unique_ptr<StreamRead> StreamRead::Create(const std::shared_ptr<const std::vector<T>>& a_data, const size_t a_begin, const size_t a_end)
 {
-    auto impl = std::make_unique<MemStreamImpl<T>>(a_data, a_begin);
+    using ImplT = StreamReadImplT<StreamRead::Impl, MemStreamRead<T>>;
+    auto impl = std::make_unique<ImplT>(a_data, a_begin, a_end);
     return std::unique_ptr<StreamRead>(new StreamRead(std::move(impl)));
 }

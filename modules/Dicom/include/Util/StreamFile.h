@@ -1,15 +1,15 @@
 #ifndef STREAM_FILE_FDF99E61_DB60_4AD1_899C_D4F7E1E2C3DB_
 #define STREAM_FILE_FDF99E61_DB60_4AD1_899C_D4F7E1E2C3DB_
 
-#include <Util/Stream.h>
 #include <limits>
 #include <cstdio>
 #include <string>
+#include <stdexcept>
 
-class FileStreamImpl :public StreamRead::Impl
+class FileStreamRead
 {
 public:
-    FileStreamImpl(const std::string& path)
+    FileStreamRead(const std::string& path)
         : m_file(fopen(path.c_str(), "rb"), fclose)
     {
         if (!m_file)
@@ -31,7 +31,7 @@ public:
         }
     }
 
-    size_t read(void* a_dest, size_t a_size_in_bytes) override
+    size_t read(void* a_dest, size_t a_size_in_bytes)
     {
         assert(a_dest);
 
@@ -39,12 +39,12 @@ public:
         return bytes_read;
     }
 
-    size_t size() const override
+    size_t size() const
     {
         return m_size;
     }
 
-    size_t pos() const override
+    size_t pos() const
     {
         fpos_t pos = 0;
         if (fgetpos(m_file.get(), &pos) != 0)
@@ -52,7 +52,7 @@ public:
         return static_cast<size_t>(pos);
     }
 
-    bool seek(size_t a_pos) override
+    bool seek(size_t a_pos)
     {
         if (fseek(m_file.get(), static_cast<long>(a_pos), SEEK_SET) != 0) {
             assert(false);
@@ -61,7 +61,7 @@ public:
         return true;
     }
 
-    bool advance(const ptrdiff_t a_offset) override
+    bool advance(const ptrdiff_t a_offset)
     {
         if (fseek(m_file.get(), static_cast<long>(a_offset), SEEK_CUR) != 0) {
             assert(false);
