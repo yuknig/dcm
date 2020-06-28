@@ -19,7 +19,6 @@ set (HEADERS
              include/Util/CastValue.h
              include/Util/optional.h
              include/Util/Stream.h
-             include/Util/Stream.inl
              include/Util/StreamImplT.h
              include/Util/StreamMem.h
              include/Util/StreamFile.h
