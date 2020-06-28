@@ -3,7 +3,9 @@
 
 #include <Dicom/Util.h>
 #include <algorithm>
-#include <cstring>
+#include <cassert>
+#include <memory>
+#include <vector>
 
 template <typename T>
 class MemStreamRead
