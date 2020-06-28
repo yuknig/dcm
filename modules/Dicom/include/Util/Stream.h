@@ -1,6 +1,11 @@
 #ifndef _STREAM_E7ABA6CD_887D_4BBD_A25E_29D6917D82EA_
 #define _STREAM_E7ABA6CD_887D_4BBD_A25E_29D6917D82EA_
 
+
+#include <Util/StreamMem.h>
+#include <Util/StreamImplT.h>
+
+#include <cassert>
 #include <memory>
 #include <string>
 #include <vector>
@@ -19,7 +24,15 @@ public://functions
     virtual ~StreamRead() = default;
 
     template <typename T>
-    T read();
+    T read()
+    {
+        assert(m_impl);
+
+        T res = {};
+        const size_t bytes_read = m_impl->read(&res, sizeof(T));
+        assert(bytes_read == sizeof(T));
+        return res;
+    }
 
     size_t read(void* a_dest, size_t a_size_in_bytes);
 
@@ -53,6 +66,12 @@ protected://data
     std::unique_ptr<Impl> m_impl;
 };
 
-#include <Util/Stream.inl>
+template <typename T>
+std::unique_ptr<StreamRead> StreamRead::Create(const std::shared_ptr<const std::vector<T>>& a_data, const size_t a_begin, const size_t a_end)
+{
+    using ImplT = StreamReadImplT<StreamRead::Impl, MemStreamRead<T>>;
+    auto impl = std::make_unique<ImplT>(a_data, a_begin, a_end);
+    return std::unique_ptr<StreamRead>(new StreamRead(std::move(impl)));
+}
 
 #endif
