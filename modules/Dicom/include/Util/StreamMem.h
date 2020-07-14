@@ -6,6 +6,7 @@
 #include <cassert>
 #include <memory>
 #include <vector>
+#include <type_traits>
 
 template <typename T>
 class MemStreamRead
@@ -117,6 +118,39 @@ private://data
     size_t m_begin;
     size_t m_end;
     size_t m_cur;
+};
+
+template <typename T>
+class MemStreamWrite
+{
+public://functions
+    MemStreamWrite(const std::shared_ptr<const std::vector<T>>& a_data)
+        : m_data(a_data)
+    {
+        static_assert(sizeof(T) == sizeof(char), "Only for 1 byte types");
+    }
+
+    template <typename ValueT>
+    void write(const ValueT& value)
+    {
+        static_assert(std::is_arithmetic<ValueT>::value, "For arithmetic types");
+
+        // push value byte by byte
+        // TODO: optimize?
+        const T* byte_ptr = reinterpret_cast<const T*>(value);
+        for (size_t byte_num = 0; byte_num < sizeof(ValueT); ++byte_num)
+            m_data.push_back(byte_ptr[byte_num]); // assuming Little Endian byte order
+    }
+
+    template <typename ValueT>
+    MemStreamWrite<T>& operator<<(const ValueT& value)
+    {
+        stream.write(value);
+        return *this;
+    }
+
+private:
+    std::shared_ptr<std::vector<T>> m_data;
 };
 
 #endif //_STREAMMEM_AB7E4C09_71A8_490B_9116_AAB2C1A13DA8_
