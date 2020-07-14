@@ -52,11 +52,20 @@ public://functions
         assert(0 < a_size_in_bytes);
         assert(m_end >= m_cur);
 
-        const size_t bytes_left = GetBytesLeft();
+        const size_t bytes_left = sizeToEnd();
         const size_t bytes_to_read = std::min(a_size_in_bytes, bytes_left);
         memcpy(a_dest, m_data->data() + m_cur, bytes_to_read);
         assert(bytes_to_read == a_size_in_bytes);
         return bytes_to_read;
+    }
+
+    template <typename ValueT>
+    ValueT read()
+    {
+        ValueT res = {};
+        const size_t bytes_read = read(&res, sizeof(ValueT));
+        assert(bytes_read == sizeof(ValueT));
+        return res;
     }
 
     size_t size() const
@@ -86,7 +95,7 @@ public://functions
     {
         if (a_offset > 0)
         {
-            const size_t bytes_left = GetBytesLeft();
+            const size_t bytes_left = sizeToEnd();
             if (a_offset > static_cast<ptrdiff_t>(bytes_left))
             {
                 assert(false);
@@ -105,8 +114,7 @@ public://functions
         return true;
     }
 
-protected://functions
-    inline size_t GetBytesLeft() const
+    size_t sizeToEnd() const
     {
         assert(m_data);
         assert(m_data->size() >= m_end);
