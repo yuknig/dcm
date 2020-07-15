@@ -510,42 +510,6 @@ std::optional<TagDesc> GetTagDesc(StreamRead& a_stream, const bool a_explicitFil
     return std::nullopt;
 }
 
-std::optional<std::pair<Tag, VRType>> GetTagAndVr(StreamRead& a_stream, const bool a_explicitFile)
-{
-    constexpr uint32_t ItemTag           = 0xfffee000;
-    constexpr uint32_t ItemDelimiter     = 0xfffee00d;
-    constexpr uint32_t SequenceDelimiter = 0xfffee0dd;
-
-    const auto tag = GetTag(a_stream);
-    if (!tag)
-    {
-        return std::nullopt;
-    }
-
-    const bool isNoVrTag = (*tag == ItemTag) || (*tag == ItemDelimiter) || (*tag == SequenceDelimiter);
-    const bool isExplicitTag = isNoVrTag ? false : a_explicitFile;
-
-    VRType vrType = VRType::Undefined;
-    if (isExplicitTag)
-    {
-        if (6 > a_stream.sizeToEnd())
-        {
-            return std::nullopt;
-        }
-
-        a_stream.advance(4);
-        const auto vr = a_stream.read<uint16_t>();
-        const VRCode vrCode = static_cast<VRCode>(vr);
-        vrType = vrCodeToVrType(vrCode);
-        assert(VRType::Undefined != vrType);
-    }
-    else
-    {
-        vrType = dict::GetTagVR(*tag);
-    }
-    return std::make_pair(*tag, vrType);
-}
-
 std::optional<size_t> GetFirstTagOffset(StreamRead& a_stream)
 {
     // returns offset of first tag in file
