@@ -1,4 +1,5 @@
 #include <Dicom/Parser.h>
+#include <Dicom/TagStruct/ParseHelpers.h>
 #include <Dicom/Util.h>
 #include <Dicom/dict.h>
 #include <Util/string_util.h>
@@ -543,17 +544,6 @@ std::optional<std::pair<Tag, VRType>> GetTagAndVr(StreamRead& a_stream, const bo
         vrType = dict::GetTagVR(*tag);
     }
     return std::make_pair(*tag, vrType);
-}
-
-std::optional<Tag> GetTag(StreamRead& a_stream)
-{
-    if (sizeof(Tag) > a_stream.sizeToEnd()) // 4 bytes tag
-    {
-        return std::nullopt;
-    }
-
-    const auto data = a_stream.read<uint32_t>(); // swapped words
-    return Tag(data & 0xffff, data >> 16);
 }
 
 std::optional<size_t> GetFirstTagOffset(StreamRead& a_stream)

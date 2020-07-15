@@ -94,7 +94,6 @@ std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGr
 bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<Group>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse);
 std::optional<TagDesc> GetTagDesc(StreamRead& a_stream, const bool a_explicitFile);
 std::optional<std::pair<Tag, VRType>> GetTagAndVr(StreamRead& a_stream, const bool a_explicitFile);
-std::optional<Tag> GetTag(StreamRead& a_stream);
 std::optional<size_t> GetFirstTagOffset(StreamRead& a_stream);
 
 } // namespace ParseHelper
