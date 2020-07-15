@@ -11,7 +11,8 @@ include_directories(../googletest/googletest/include/gtest)
 set (HEADERS 
              )
 
-set (SOURCES src/main.cpp
+set (SOURCES src/TagStruct/ParseHelpers_tests.cpp
+             src/main.cpp
              src/CastValueTests.cpp
              src/MVectorTests.cpp
              )
