@@ -289,7 +289,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
         std::deque<ParseGroupDesc> groups_to_parse;
         ParserConfig def_config;
         groups_to_parse.emplace_back(ParseGroupDesc{ *data_offset, a_stream.size(), def_config, root.get() });
-        auto parsed_to = ParseHelper::PickAndParseGroup(a_stream, groups_to_parse, std::min(a_max_tag, Tag(0x3, 0x0))); // parse group 0x0002
+        auto parsed_to = PickAndParseGroup(a_stream, groups_to_parse, std::min(a_max_tag, Tag(0x3, 0x0))); // parse group 0x0002
         if (!parsed_to)
         {
             return false;
@@ -313,7 +313,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
 
     while (!groups_to_parse.empty())
     {
-        auto parsed_to_offset = ParseHelper::PickAndParseGroup(a_stream, groups_to_parse, a_max_tag);
+        auto parsed_to_offset = PickAndParseGroup(a_stream, groups_to_parse, a_max_tag);
         if (!parsed_to_offset.has_value())
         {
             assert(false);
@@ -337,59 +337,6 @@ std::shared_ptr<Group> Parser::root() const
 namespace ParseHelper
 {
 
-// parse 1 group from queue
-std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag)
-{
-    if (a_groupQueue.empty())
-        return std::nullopt;
-
-    auto group = std::move(a_groupQueue.back());
-    a_groupQueue.pop_back();
-
-    auto tag_offset = group.m_stream_begin;
-    Tag tagNum(0);
-
-    while (tag_offset < group.m_stream_end)
-    {
-        a_stream.seek(tag_offset);
-        const auto tag_desc = GetTagDesc(a_stream, group.m_config.IsExplicit());
-        if (!tag_desc)
-        {
-            assert(false);
-            return false;
-        }
-
-        tagNum = tag_desc->m_tag;
-        if (a_max_tag < tagNum)
-            break;
-        const auto value_offset = tag_offset + tag_desc->m_valueOffset;
-
-        if (VRType::SQ == tag_desc->m_vr)
-        {
-            std::vector<std::unique_ptr<Group>> sequence_items;
-            if (ParseSequence(a_stream, value_offset, value_offset + tag_desc->m_valueLength, group.m_config, sequence_items, a_groupQueue))
-                group.m_dest_group->AddSequence(tagNum, std::move(sequence_items));
-            else
-            {
-                assert(false);
-                return false;
-            }
-        }
-        else
-        {
-            a_stream.seek(value_offset);
-            if (!readDicomParams(*group.m_dest_group, a_stream, *tag_desc))
-            {
-                assert(false);
-                return false;
-            }
-        }
-        tag_offset += tag_desc->m_fullLength;
-    }
-
-    //assert(tag_offset == group.m_stream_end);
-    return tag_offset;
-}
 
 } // namespace ParseHelper
 

@@ -4,11 +4,8 @@
 #include <Dicom/TagValues.h>
 #include <Dicom/TagStruct/ParseConfig.h>
 
-#include <deque>
-#include <vector>
 #include <memory>
 #include <assert.h>
-#include <Util/optional.h>
 #include <Util/Stream.h>
 
 namespace dcm
@@ -56,13 +53,6 @@ private://data
     GroupPtr     m_root;
     ParserConfig m_config;
 };
-
-namespace ParseHelper
-{
-
-std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag);
-
-} // namespace ParseHelper
 
 }//namespace dcm
 
