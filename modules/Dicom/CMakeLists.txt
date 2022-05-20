@@ -10,6 +10,7 @@ set (HEADERS
              include/Dicom/TagStruct/ParseConfig.h
              include/Dicom/TagStruct/ParseHelpers.h
              include/Dicom/TagStruct/SingleValue.h
+             include/Dicom/TagStruct/TagDesc.h
              include/Dicom/TagStruct/TagNum.h
              include/Dicom/TagStruct/Vr.h
              include/Dicom/dict.h
