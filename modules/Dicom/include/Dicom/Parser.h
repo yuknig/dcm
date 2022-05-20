@@ -2,6 +2,7 @@
 #define _PARSER_C6B68E8E_AFAF_499F_95AE_249B47CE139F_
 
 #include <Dicom/TagValues.h>
+#include <Dicom/TagStruct/ParseConfig.h>
 
 #include <deque>
 #include <vector>
@@ -36,29 +37,6 @@ public://data
     bool     m_nested;
     VRType   m_vr;
     //TODO: add flag is length defined
-};
-
-struct ParserConfig
-{
-public://data
-    ParserConfig()
-        : m_explicit(true)
-        , m_little_endian(true)
-    {}
-
-    ParserConfig(bool a_explicit, bool a_little_endian)
-        : m_explicit(a_explicit)
-        , m_little_endian(a_little_endian)
-    {}
-
-    bool IsExplicit() const 
-    {
-        return m_explicit;
-    }
-
-public://data
-    bool m_explicit;
-    bool m_little_endian;
 };
 
 struct ParseGroupDesc
