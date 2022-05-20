@@ -1,24 +1,26 @@
 #ifndef _STREAMMEM_AB7E4C09_71A8_490B_9116_AAB2C1A13DA8_
 #define _STREAMMEM_AB7E4C09_71A8_490B_9116_AAB2C1A13DA8_
 
-#include <Util/Stream.h>
 #include <Dicom/Util.h>
 #include <algorithm>
-#include <cstring>
+#include <cassert>
+#include <memory>
+#include <vector>
+#include <type_traits>
 
 template <typename T>
-class MemStreamImpl :public StreamRead::Impl
+class MemStreamRead
 {
 public://functions
-    MemStreamImpl(const std::shared_ptr<const std::vector<T>>& a_data)
-        : MemStreamImpl(a_data, 0, a_data->size())
+    MemStreamRead(const std::shared_ptr<const std::vector<T>>& a_data)
+        : MemStreamRead(a_data, 0, a_data->size())
     {}
 
-    MemStreamImpl(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin)
-        : MemStreamImpl(a_data, a_begin, a_data->size())
+    MemStreamRead(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin)
+        : MemStreamRead(a_data, a_begin, a_data->size())
     {}
 
-    MemStreamImpl(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin, size_t a_end)
+    MemStreamRead(const std::shared_ptr<const std::vector<T>>& a_data, size_t a_begin, size_t a_end)
         : m_data(a_data)
         , m_begin(a_begin)
         , m_end(a_end)
@@ -34,7 +36,7 @@ public://functions
             throw std::invalid_argument("Wrong memory range (a_end>size)");
     }
 
-    ~MemStreamImpl() = default;
+    ~MemStreamRead() = default;
 
     /*std::unique_ptr<Impl> shrinkClone(size_t a_parent_start, size_t a_parent_end) const override
     {
@@ -44,30 +46,39 @@ public://functions
         return std::make_unique<MemStreamImpl>(m_data, m_begin + a_parent_begin, m_begin + a_parent_end);
     }*/
 
-    size_t read(void* a_dest, size_t a_size_in_bytes) override
+    size_t read(void* a_dest, size_t a_size_in_bytes)
     {
         assert(a_dest);
         assert(0 < a_size_in_bytes);
         assert(m_end >= m_cur);
 
-        const size_t bytes_left = GetBytesLeft();
+        const size_t bytes_left = sizeToEnd();
         const size_t bytes_to_read = std::min(a_size_in_bytes, bytes_left);
         memcpy(a_dest, m_data->data() + m_cur, bytes_to_read);
         assert(bytes_to_read == a_size_in_bytes);
         return bytes_to_read;
     }
 
-    size_t size() const override
+    template <typename ValueT>
+    ValueT read()
+    {
+        ValueT res = {};
+        const size_t bytes_read = read(&res, sizeof(ValueT));
+        assert(bytes_read == sizeof(ValueT));
+        return res;
+    }
+
+    size_t size() const
     {
         return (m_end > m_begin ? m_end - m_begin : 0u);
     }
 
-    size_t pos() const override
+    size_t pos() const
     {
         return m_cur - m_begin;
     }
 
-    bool seek(size_t a_pos) override
+    bool seek(size_t a_pos)
     {
         const size_t range = m_end - m_begin;
         if (a_pos > range)
@@ -80,11 +91,11 @@ public://functions
         return true;
     }
 
-    bool advance(const ptrdiff_t a_offset) override
+    bool advance(const ptrdiff_t a_offset)
     {
         if (a_offset > 0)
         {
-            const size_t bytes_left = GetBytesLeft();
+            const size_t bytes_left = sizeToEnd();
             if (a_offset > static_cast<ptrdiff_t>(bytes_left))
             {
                 assert(false);
@@ -103,8 +114,7 @@ public://functions
         return true;
     }
 
-protected://functions
-    inline size_t GetBytesLeft() const
+    size_t sizeToEnd() const
     {
         assert(m_data);
         assert(m_data->size() >= m_end);
@@ -116,6 +126,39 @@ private://data
     size_t m_begin;
     size_t m_end;
     size_t m_cur;
+};
+
+template <typename T>
+class MemStreamWrite
+{
+public://functions
+    MemStreamWrite(const std::shared_ptr<const std::vector<T>>& a_data)
+        : m_data(a_data)
+    {
+        static_assert(sizeof(T) == sizeof(char), "Only for 1 byte types");
+    }
+
+    template <typename ValueT>
+    void write(const ValueT& value)
+    {
+        static_assert(std::is_arithmetic<ValueT>::value, "For arithmetic types");
+
+        // push value byte by byte
+        // TODO: optimize?
+        const T* byte_ptr = reinterpret_cast<const T*>(value);
+        for (size_t byte_num = 0; byte_num < sizeof(ValueT); ++byte_num)
+            m_data.push_back(byte_ptr[byte_num]); // assuming Little Endian byte order
+    }
+
+    template <typename ValueT>
+    MemStreamWrite<T>& operator<<(const ValueT& value)
+    {
+        stream.write(value);
+        return *this;
+    }
+
+private:
+    std::shared_ptr<std::vector<T>> m_data;
 };
 
 #endif //_STREAMMEM_AB7E4C09_71A8_490B_9116_AAB2C1A13DA8_

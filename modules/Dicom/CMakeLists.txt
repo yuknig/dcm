@@ -7,7 +7,10 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(include)
 
 set (HEADERS 
+             include/Dicom/TagStruct/ParseConfig.h
+             include/Dicom/TagStruct/ParseHelpers.h
              include/Dicom/TagStruct/SingleValue.h
+             include/Dicom/TagStruct/TagDesc.h
              include/Dicom/TagStruct/TagNum.h
              include/Dicom/TagStruct/Vr.h
              include/Dicom/dict.h
@@ -19,7 +22,7 @@ set (HEADERS
              include/Util/CastValue.h
              include/Util/optional.h
              include/Util/Stream.h
-             include/Util/Stream.inl
+             include/Util/StreamImplT.h
              include/Util/StreamMem.h
              include/Util/StreamFile.h
              include/Util/string_util.h
