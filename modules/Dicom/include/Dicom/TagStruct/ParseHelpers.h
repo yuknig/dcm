@@ -8,6 +8,9 @@
 
 #include <cassert>
 #include <cstdint>
+#include <deque>
+#include <memory>
+#include <vector>
 
 namespace dcm
 {
@@ -155,6 +158,52 @@ std::optional<size_t> GetFirstTagOffset(StreamT& a_stream)
     if (sign != a_stream.read<uint32_t>())
         return std::nullopt;
     return SignatureOffset + 4/*sizeof(uint32_t)*/;
+}
+
+struct ParseGroupDesc
+{
+    size_t       m_stream_begin;
+    size_t       m_stream_end;
+    ParserConfig m_config;
+    Group* m_dest_group;
+};
+
+template <typename StreamT>
+bool ParseSequence(StreamT& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<Group>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse)
+{
+    auto tag_offset = a_begin_offset;
+
+    std::vector<std::unique_ptr<Group>> items;
+
+    while (tag_offset < a_end_offset)
+    {
+        a_stream.seek(tag_offset);
+        const auto tag_desc = GetTagDesc(a_stream, a_config.IsExplicit());
+        if (!tag_desc)
+        {
+            assert(false);
+            return false;
+        }
+        if (ItemTag != tag_desc->m_tag.m_solid)
+        {
+            assert(false);
+        }
+
+        const auto value_offset = tag_offset + tag_desc->m_valueOffset;
+
+        auto item = std::make_unique<Group>();
+        a_items_to_parse.emplace_back(ParseGroupDesc{ value_offset,
+                                             value_offset + tag_desc->m_valueLength,
+                                             a_config,
+                                             item.get() });
+        items.emplace_back(std::move(item));
+
+        tag_offset += tag_desc->m_fullLength;
+    }
+    assert(tag_offset == a_end_offset);
+
+    a_items.swap(items);
+    return true;
 }
 
 } // namespace dcm

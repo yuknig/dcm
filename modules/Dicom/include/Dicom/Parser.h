@@ -39,14 +39,6 @@ public://data
     //TODO: add flag is length defined
 };
 
-struct ParseGroupDesc
-{
-    size_t       m_stream_begin;
-    size_t       m_stream_end;
-    ParserConfig m_config;
-    Group*       m_dest_group;
-};
-
 class Parser
 {
 public://functions
@@ -69,7 +61,6 @@ namespace ParseHelper
 {
 
 std::optional<size_t> PickAndParseGroup(StreamRead& a_stream, std::deque<ParseGroupDesc>& a_groupQueue, const Tag a_max_tag);
-bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size_t a_end_offset, const ParserConfig& a_config, std::vector<std::unique_ptr<Group>>& a_items, std::deque<ParseGroupDesc>& a_items_to_parse);
 
 } // namespace ParseHelper
 
