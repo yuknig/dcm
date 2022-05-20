@@ -137,6 +137,25 @@ std::optional<TagDesc> GetTagDesc(StreamT& a_stream, const bool a_explicitFile)
     return std::nullopt;
 }
 
+template <typename StreamT>
+std::optional<size_t> GetFirstTagOffset(StreamT& a_stream)
+{
+    // returns offset of first tag in file
+    constexpr uint32_t sign = 0x4D434944; // DICM
+    if (sign == a_stream.read<uint32_t>())
+        return 4u;
+
+    const size_t SignatureOffset = 128U;
+    if (SignatureOffset + 4 > a_stream.size())
+    {
+        return std::nullopt;
+    }
+
+    a_stream.seek(SignatureOffset);
+    if (sign != a_stream.read<uint32_t>())
+        return std::nullopt;
+    return SignatureOffset + 4/*sizeof(uint32_t)*/;
+}
 
 } // namespace dcm
 

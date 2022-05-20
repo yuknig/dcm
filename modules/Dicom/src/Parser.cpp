@@ -282,7 +282,7 @@ bool Parser::Parse(StreamRead& a_stream, GroupPtr& a_root, const Tag& a_max_tag)
     size_t start_offset = 0;
 
     {
-        auto data_offset = ParseHelper::GetFirstTagOffset(a_stream);
+        auto data_offset = GetFirstTagOffset(a_stream);
         if (!data_offset)
             return false;
 
@@ -426,25 +426,6 @@ bool ParseSequence(StreamRead& a_stream, const size_t a_begin_offset, const size
 
     a_items.swap(items);
     return true;
-}
-
-std::optional<size_t> GetFirstTagOffset(StreamRead& a_stream)
-{
-    // returns offset of first tag in file
-    constexpr uint32_t sign = 0x4D434944;
-    if (sign == a_stream.read<uint32_t>())
-        return 4u;
-
-    const size_t SignatureOffset = 128U;
-    if (SignatureOffset + 4 > a_stream.size())
-    {
-        return std::nullopt;
-    }
-
-    a_stream.seek(SignatureOffset);
-    if (sign != a_stream.read<uint32_t>())
-        return std::nullopt;
-    return SignatureOffset + 4/*sizeof(uint32_t)*/;
 }
 
 } // namespace ParseHelper
