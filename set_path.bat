@@ -1,1 +1,0 @@
-set BOOST_DIR="F:\develop\boost_1_69_0"
