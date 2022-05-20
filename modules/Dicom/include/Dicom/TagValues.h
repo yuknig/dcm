@@ -8,7 +8,6 @@
 #include <Util/buffer_view.h>
 #include <Util/Stream.h>
 #include <Util/MVector.h>
-#include "Util/optional.h"
 #include "Util/CastValue.h" //TODO: harmonize style of includes
 
 #include <vector>
@@ -16,6 +15,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
+#include <optional>
 
 namespace dcm
 {

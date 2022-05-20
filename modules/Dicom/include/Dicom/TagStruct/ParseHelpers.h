@@ -5,12 +5,12 @@
 #include <Dicom/TagStruct/TagNum.h>
 #include <Dicom/TagStruct/Vr.h>
 #include <Dicom/dict.h>
-#include <Util/optional.h>
 
 #include <cassert>
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace dcm
