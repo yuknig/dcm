@@ -532,6 +532,7 @@ std::optional<std::pair<Tag, VRType>> GetTagAndVr(StreamRead& a_stream, const bo
             return std::nullopt;
         }
 
+        a_stream.advance(4);
         const auto vr = a_stream.read<uint16_t>();
         const VRCode vrCode = static_cast<VRCode>(vr);
         vrType = vrCodeToVrType(vrCode);
