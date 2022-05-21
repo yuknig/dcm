@@ -30,8 +30,7 @@ endif ()
 add_subdirectory(modules/Dicom)
 
 #tests
-add_subdirectory(tests/gtest)
-add_subdirectory(tests/DicomTest)
+add_subdirectory(tests)
 
 add_executable (${PROJECT} ${HEADERS} ${SOURCES})
 
