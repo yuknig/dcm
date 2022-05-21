@@ -1,6 +1,7 @@
 #ifndef _PARSE_HELPERS_3DCF27BD_A44D_4D60_9AE4_50B1B37456C5_
 #define _PARSE_HELPERS_3DCF27BD_A44D_4D60_9AE4_50B1B37456C5_
 
+#include <Dicom/TagStruct/ParseConfig.h>
 #include <Dicom/TagStruct/TagDesc.h>
 #include <Dicom/TagStruct/TagNum.h>
 #include <Dicom/TagStruct/Vr.h>
@@ -15,6 +16,8 @@
 
 namespace dcm
 {
+
+class Group;
 
 template <typename StreamT>
 std::optional<Tag> GetTag(StreamT& a_stream)
